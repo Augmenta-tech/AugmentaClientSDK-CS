@@ -1,30 +1,56 @@
+using System;
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace Augmenta
 {
-    public class PleiadesClient
+
+    public class PleaidesClient : GenericPleiadesClient
     {
-        public Dictionary<int, PObject> objects = new Dictionary<int, PObject>();
         Matrix4x4 transform;
 
-        //Call once per frame
-        public void Update(float time, Matrix4x4 transform)
+        public void update(float time, Matrix4x4 transform)
         {
             this.transform = transform;
+            base.update(time);
+        }
 
+        override protected BasePObject createObject()
+        {
+            return new PObject();
+        }
+
+        override protected BasePZone createZone()
+        {
+            return new PZone();
+        }
+
+        protected override void processObjectInternal(BasePObject o)
+        {
+            var obj = (PObject)o;
+            obj.parentTransform = transform;
+        }
+    }
+
+    public abstract class GenericPleiadesClient
+    {
+        public Dictionary<int, BasePObject> objects = new Dictionary<int, BasePObject>();
+
+        //Call once per frame
+        virtual public void update(float time)
+        {
             var objectsToRemove = new List<int>();
             foreach (var o in objects.Values)
             {
-                o.Update(time);
-                if (o.timeSinceGhost > 1) 
+                o.update(time);
+                if (o.timeSinceGhost > 1)
                     objectsToRemove.Add(o.objectID);
             }
 
             foreach (var oid in objectsToRemove)
             {
                 var o = objects[oid];
-                objects.Remove(oid);
-                o.kill();
+                removeObject(o);
             }
         }
 
@@ -65,27 +91,35 @@ namespace Augmenta
         {
             var objectID = Utils.ReadInt(data, offset + 1 + sizeof(int)); //offset + sizeof(packettype) + sizeof(packetsize)
 
-            PObject o = null;
+            BasePObject o = null;
             if (objects.ContainsKey(objectID)) o = objects[objectID];
             if (o == null)
             {
-                o = new PObject();
+                o = createObject();
                 o.objectID = objectID;
                 o.onRemove += onObjectRemove;
                 objects.Add(objectID, o);
             }
 
-            o.parentTransform = transform;
+            processObjectInternal(o);
+
             o.updateData(time, data, offset);
         }
 
         void processZone(float time, ReadOnlySpan<byte> data, int offset)
         {
-
         }
 
         //events
-        void onObjectRemove(PObject o)
+        virtual protected void processObjectInternal(BasePObject o) { }
+        abstract protected BasePObject createObject();
+        abstract protected BasePZone createZone();
+
+        protected void onObjectRemove(BasePObject o)
+        {
+            removeObject(o);
+        }
+        protected void removeObject(BasePObject o)
         {
             objects.Remove(o.objectID);
             o.kill();

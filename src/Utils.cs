@@ -20,13 +20,6 @@ namespace Augmenta
             return MemoryMarshal.Cast<byte, float>(data.Slice(offset))[0];
         }
 
-        internal static Vector3 ReadVector(ReadOnlySpan<byte> data, int offset)
-        {
-            return MemoryMarshal.Cast<byte, Vector3>(data.Slice(offset))[0];
-        }
-        internal static ReadOnlySpan<Vector3> ReadVectors(ReadOnlySpan<byte> data, int offset, int length)
-        {
-            return MemoryMarshal.Cast<byte, Vector3>(data.Slice(offset, length));
-        }
+
     }
 }

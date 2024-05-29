@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace Augmenta
 {
-    public abstract class BasePObject
+    public abstract class BasePZone
     {
         public int objectID;
         public float lastUpdateTime;
@@ -13,7 +13,7 @@ namespace Augmenta
         public float timeSinceGhost;
         public bool drawDebug;
 
-        public delegate void OnRemoveEvent(BasePObject obj);
+        public delegate void OnRemoveEvent(BasePZone obj);
         public event OnRemoveEvent onRemove;
 
         public enum State { Enter = 0, Update = 1, Leave = 2, Ghost = 3 };
@@ -50,7 +50,7 @@ namespace Augmenta
         }
     }
 
-    public abstract class GenericPObject<T> : BasePObject
+    public abstract class GenericPZone<T> : BasePZone
     {
         private T[] pointsA = new T[0];
         private int pointCount;
@@ -164,7 +164,7 @@ namespace Augmenta
         abstract protected ReadOnlySpan<T> ReadVectors(ReadOnlySpan<byte> data, int offset, int length);
     }
 
-    public class PObject : GenericPObject<Vector3>
+    public class PZone : GenericPZone<Vector3>
     {
         public Matrix4x4 transform;
         public Matrix4x4 parentTransform;
