@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
@@ -13,11 +14,18 @@ namespace Augmenta
         public float timeSinceGhost;
         public bool drawDebug;
 
+        public float weight;
+        public enum PositionUpdateMode { None, Centroid, BoxCenter }
+        public PositionUpdateMode posUpdateMode = PositionUpdateMode.Centroid;
+        public enum CoordMode { Absolute, Relative }
+        public CoordMode pointMode = CoordMode.Relative;
+        public enum State { Enter = 0, Update = 1, Leave = 2, Ghost = 3 };
+        public State state;
+
         public delegate void OnRemoveEvent(BasePObject obj);
         public event OnRemoveEvent onRemove;
 
-        public enum State { Enter = 0, Update = 1, Leave = 2, Ghost = 3 };
-        public State state;
+
         public void update(float time)
         {
             if (time - lastUpdateTime > .5f)
@@ -43,7 +51,7 @@ namespace Augmenta
             }
         }
 
-        virtual public void kill() { }
+        virtual public void kill(bool immediate = false) { }
         virtual public void clear()
         {
             state = State.Ghost;
@@ -64,15 +72,6 @@ namespace Augmenta
         public T minBounds;
         public T maxBounds;
         //[Range(0, 1)]
-        public float weight;
-
-        public enum PositionUpdateMode { None, Centroid, BoxCenter }
-        public PositionUpdateMode posUpdateMode = PositionUpdateMode.Centroid;
-
-        public enum CoordMode { Absolute, Relative }
-        public CoordMode pointMode = CoordMode.Relative;
-
-
 
 
         // Update is called once per frame
@@ -131,8 +130,9 @@ namespace Augmenta
                 var si = offset + sizeof(int) + i * 12;
 
                 var p = ReadVector(data, si);
-                if (i == 1) clusterData[i] = p;
+                if (i == 1) clusterData[i] = p; //don't transform the velocity, it's already in world space
                 else updateClusterPoint(ref clusterData[i], p);
+                //UnityEngine.Debug.Log(i + " : " + p.ToString()+" <> " + clusterData[i].ToString());
 
             }
 
@@ -140,10 +140,10 @@ namespace Augmenta
             velocity = clusterData[1];
             minBounds = clusterData[2];
             maxBounds = clusterData[3];
+
             weight = Utils.ReadFloat(data, offset + 4 + 4 * 12);
 
-
-            updatePosition();
+            updatePosition(); 
         }
 
         public override void clear()

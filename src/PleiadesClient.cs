@@ -4,34 +4,6 @@ using System.Numerics;
 
 namespace Augmenta
 {
-
-    public class PleaidesClient : GenericPleiadesClient
-    {
-        Matrix4x4 transform;
-
-        public void update(float time, Matrix4x4 transform)
-        {
-            this.transform = transform;
-            base.update(time);
-        }
-
-        override protected BasePObject createObject()
-        {
-            return new PObject();
-        }
-
-        override protected BasePZone createZone()
-        {
-            return new PZone();
-        }
-
-        protected override void processObjectInternal(BasePObject o)
-        {
-            var obj = (PObject)o;
-            obj.parentTransform = transform;
-        }
-    }
-
     public abstract class GenericPleiadesClient
     {
         public Dictionary<int, BasePObject> objects = new Dictionary<int, BasePObject>();
@@ -93,13 +65,7 @@ namespace Augmenta
 
             BasePObject o = null;
             if (objects.ContainsKey(objectID)) o = objects[objectID];
-            if (o == null)
-            {
-                o = createObject();
-                o.objectID = objectID;
-                o.onRemove += onObjectRemove;
-                objects.Add(objectID, o);
-            }
+            if (o == null) o = addObject(objectID);
 
             processObjectInternal(o);
 
@@ -119,10 +85,53 @@ namespace Augmenta
         {
             removeObject(o);
         }
-        protected void removeObject(BasePObject o)
+
+        protected virtual BasePObject addObject(int objectID)
+        {
+            var o = createObject();
+            o.objectID = objectID;
+            o.onRemove += onObjectRemove;
+            objects.Add(objectID, o);
+            return o;
+        }
+        protected virtual void removeObject(BasePObject o)
         {
             objects.Remove(o.objectID);
             o.kill();
+        }
+
+        virtual public void clear()
+        {
+            foreach (var o in objects.Values)
+                o.kill(true);
+            objects.Clear();
+        }
+    }
+
+    public class PleaidesClient : GenericPleiadesClient
+    {
+        Matrix4x4 transform;
+
+        public void update(float time, Matrix4x4 transform)
+        {
+            this.transform = transform;
+            base.update(time);
+        }
+
+        override protected BasePObject createObject()
+        {
+            return new PObject();
+        }
+
+        override protected BasePZone createZone()
+        {
+            return new PZone();
+        }
+
+        protected override void processObjectInternal(BasePObject o)
+        {
+            var obj = (PObject)o;
+            obj.parentTransform = transform;
         }
     }
 }
