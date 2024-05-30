@@ -71,6 +71,8 @@ namespace Augmenta
         public T velocity;
         public T minBounds;
         public T maxBounds;
+        public T rotation;
+
         //[Range(0, 1)]
 
 
@@ -124,7 +126,8 @@ namespace Augmenta
         {
             base.updateClusterData(data, offset);
 
-            var clusterData = new T[4];
+            const int numProperties = 4;
+            var clusterData = new T[numProperties];
             for (int i = 0; i < 4; i++)
             {
                 var si = offset + sizeof(int) + i * 12;
@@ -141,9 +144,12 @@ namespace Augmenta
             minBounds = clusterData[2];
             maxBounds = clusterData[3];
 
-            weight = Utils.ReadFloat(data, offset + 4 + 4 * 12);
+            int weightDataIndex = offset + 4 + numProperties * 12;
+            weight = Utils.ReadFloat(data, weightDataIndex);
 
-            updatePosition(); 
+            rotation = ReadVector(data, weightDataIndex + 4);
+
+            updateTransform();
         }
 
         public override void clear()
@@ -158,7 +164,7 @@ namespace Augmenta
 
         abstract protected void updateCloudPoint(ref T pointInArray, T point);
         abstract protected void updateClusterPoint(ref T pointInArray, T point);
-        abstract protected void updatePosition();
+        abstract protected void updateTransform();
 
         abstract protected T ReadVector(ReadOnlySpan<byte> data, int offset);
         abstract protected ReadOnlySpan<T> ReadVectors(ReadOnlySpan<byte> data, int offset, int length);
@@ -169,7 +175,7 @@ namespace Augmenta
         public Matrix4x4 transform;
         public Matrix4x4 parentTransform;
 
-        override protected void updatePosition()
+        override protected void updateTransform()
         {
             switch (posUpdateMode)
             {
