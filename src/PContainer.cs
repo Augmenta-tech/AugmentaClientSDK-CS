@@ -124,11 +124,7 @@ namespace Augmenta
 
         protected override void handleParamUpdateInternal(string prop, JSONObject data)
         {
-            if (prop == "position")
-            {
-                position = Utils.GetVector<T>(data);
-                UnityEngine.Debug.Log("position " + position);
-            }
+            if (prop == "position")  position = Utils.GetVector<T>(data);
             else if (prop == "rotation") rotation = Utils.GetVector<T>(data);
         }
 
