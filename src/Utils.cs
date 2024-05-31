@@ -20,6 +20,11 @@ namespace Augmenta
             return MemoryMarshal.Cast<byte, float>(data.Slice(offset))[0];
         }
 
+        internal static string ReadString(ReadOnlySpan<byte> data, int offset, int length)
+        {
+            return Encoding.UTF8.GetString(data.Slice(offset, length));
+        }
+
 
     }
 }

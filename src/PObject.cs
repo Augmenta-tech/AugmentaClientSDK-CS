@@ -26,6 +26,8 @@ namespace Augmenta
         public event OnRemoveEvent onRemove;
 
 
+        //public PContainer parent;
+
         public void update(float time)
         {
             if (time - lastUpdateTime > .5f)
@@ -58,7 +60,7 @@ namespace Augmenta
         }
     }
 
-    public abstract class GenericPObject<T> : BasePObject
+    public abstract class GenericPObject<T> : BasePObject where T : struct
     {
         private T[] pointsA = new T[0];
         private int pointCount;
@@ -166,54 +168,13 @@ namespace Augmenta
         abstract protected void updateClusterPoint(ref T pointInArray, T point);
         abstract protected void updateTransform();
 
-        abstract protected T ReadVector(ReadOnlySpan<byte> data, int offset);
-        abstract protected ReadOnlySpan<T> ReadVectors(ReadOnlySpan<byte> data, int offset, int length);
-    }
-
-    public class PObject : GenericPObject<Vector3>
-    {
-        public Matrix4x4 transform;
-        public Matrix4x4 parentTransform;
-
-        override protected void updateTransform()
+        virtual protected T ReadVector(ReadOnlySpan<byte> data, int offset)
         {
-            switch (posUpdateMode)
-            {
-                case PositionUpdateMode.None:
-                    break;
-                case PositionUpdateMode.Centroid:
-                    transform.Translation = centroid;
-                    break;
-                case PositionUpdateMode.BoxCenter:
-                    transform.Translation = (minBounds + maxBounds) / 2;
-                    break;
-            }
+            return MemoryMarshal.Cast<byte, T>(data.Slice(offset))[0];
         }
-
-        override protected Vector3 ReadVector(ReadOnlySpan<byte> data, int offset)
+        protected ReadOnlySpan<T> ReadVectors(ReadOnlySpan<byte> data, int offset, int length)
         {
-            return MemoryMarshal.Cast<byte, Vector3>(data.Slice(offset))[0];
+            return MemoryMarshal.Cast<byte, T>(data.Slice(offset, length));
         }
-        override protected ReadOnlySpan<Vector3> ReadVectors(ReadOnlySpan<byte> data, int offset, int length)
-        {
-            return MemoryMarshal.Cast<byte, Vector3>(data.Slice(offset, length));
-        }
-
-        protected override void updateCloudPoint(ref Vector3 pointInArray, Vector3 point)
-        {
-            if (pointMode == CoordMode.Absolute)
-                pointInArray = point;
-            else
-                pointInArray = Vector3.Transform(point, parentTransform);
-        }
-
-        protected override void updateClusterPoint(ref Vector3 pointInArray, Vector3 point)
-        {
-            if (pointMode == CoordMode.Absolute)
-                pointInArray = point;
-            else
-                pointInArray = Vector3.Transform(point, parentTransform);
-        }
-
     }
 }
