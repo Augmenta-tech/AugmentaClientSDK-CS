@@ -40,12 +40,22 @@ namespace Augmenta
         public void processMessage(string message)
         {
             JSONObject o = new JSONObject(message);
-            if (o["status"].str == "ok")
+            if (o.HasField("status"))
             {
-                if (o.HasField("setup"))
+                if (o["status"].str == "ok")
                 {
-                    setupWorld(o["setup"]);
+                    if (o.HasField("setup"))
+                    {
+                        setupWorld(o["setup"]);
+                    }
                 }
+            }
+            else if (o.HasField("update"))
+            {
+                var id = o["update"]["id"].str;
+                var data = o["update"]["data"];
+                var container = getContainerForAddress(id);
+                if (container != null) container.handleUpdate(data);
             }
         }
 
@@ -185,7 +195,7 @@ namespace Augmenta
             objects.Remove(o.objectID);
             o.kill();
         }
-     
+
         virtual public void clear()
         {
             foreach (var o in objects.Values)
@@ -215,7 +225,8 @@ namespace Augmenta
             return createContainerInternal(data);
         }
 
-        protected virtual PContainer<T> createContainerInternal(JSONObject data) {
+        protected virtual PContainer<T> createContainerInternal(JSONObject data)
+        {
             return new PContainer<T>(this, data, null);
         }
 

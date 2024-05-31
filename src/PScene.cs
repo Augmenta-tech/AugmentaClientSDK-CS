@@ -9,7 +9,13 @@ namespace Augmenta
         public T size;
         public PScene(BasePleiadesClient client, JSONObject o, PContainer<T> parent) : base(client, o, parent, ContainerType.Scene)
         {
-            size = (T)Activator.CreateInstance(typeof(T), new object[] { o["size"][0].f, o["size"][1].f, o["size"][2].f });
+            size = Utils.GetVector<T>(o["size"]);
+        }
+
+        protected override void handleParamUpdateInternal(string prop, JSONObject data)
+        {
+            base.handleParamUpdateInternal(prop, data);
+            if (prop == "size") size = Utils.GetVector<T>(data);
         }
     }
 }

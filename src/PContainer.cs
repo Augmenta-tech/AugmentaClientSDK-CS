@@ -12,7 +12,7 @@ namespace Augmenta
 
         public ContainerType containerType;
 
-        bool isRoot;
+        public bool isRoot;
         public string name;
         public string id;
 
@@ -33,11 +33,7 @@ namespace Augmenta
             isRoot = !o.HasField("id");
 
             id = isRoot ? null : o["id"].str;
-            if (!isRoot)
-            {
-                client.registerContainer(this);
-                updateTransform(o);
-            }
+            if (!isRoot) client.registerContainer(this);
             setup(o);
         }
 
@@ -47,9 +43,9 @@ namespace Augmenta
 
             if (o.HasField("children"))
             {
-                foreach (var c in o["children"].list)
+                for (int i= 0;i < o["children"].Count;i++)
                 {
-
+                    JSONObject c = o["children"][i];
                     if (c.HasField("type"))
                     {
                         switch (c["type"].str)
@@ -80,10 +76,20 @@ namespace Augmenta
         }
 
 
-        abstract protected void updateTransform(JSONObject o);
         abstract protected BasePContainer createContainer(JSONObject o);
         abstract protected BasePContainer createZone(JSONObject o);
         abstract protected BasePContainer createScene(JSONObject o);
+
+        public void handleUpdate(JSONObject o)
+        {
+            foreach (var prop in o.keys)
+            {
+                handleParamUpdateInternal(prop, o[prop]);
+            }
+        }
+
+        virtual protected void handleParamUpdateInternal(string prop, JSONObject o) { }
+
     }
 
     public class PContainer<T> : BasePContainer where T : struct
@@ -93,16 +99,13 @@ namespace Augmenta
 
         public PContainer(BasePleiadesClient client = null, JSONObject o = null, BasePContainer parent = null, ContainerType type = ContainerType.Container) : base(client, o, parent, type)
         {
-            position = new T();
-            rotation = new T();
+            if (!isRoot)
+            {
+                position = Utils.GetVector<T>(o["position"]);
+                rotation = Utils.GetVector<T>(o["rotation"]);
+            }
         }
 
-        protected override void updateTransform(JSONObject o)
-        {
-
-            position = (T)Activator.CreateInstance(typeof(T), new object[] { o["position"][0].f, o["position"][1].f, o["position"][2].f });
-            rotation = (T)Activator.CreateInstance(typeof(T), new object[] { o["rotation"][0].f, o["rotation"][1].f, o["rotation"][2].f });
-        }
 
         protected override BasePContainer createContainer(JSONObject o)
         {
@@ -117,6 +120,16 @@ namespace Augmenta
         protected override BasePContainer createScene(JSONObject o)
         {
             return new PScene<T>(client, o, this);
+        }
+
+        protected override void handleParamUpdateInternal(string prop, JSONObject data)
+        {
+            if (prop == "position")
+            {
+                position = Utils.GetVector<T>(data);
+                UnityEngine.Debug.Log("position " + position);
+            }
+            else if (prop == "rotation") rotation = Utils.GetVector<T>(data);
         }
 
         public override string ToString()
