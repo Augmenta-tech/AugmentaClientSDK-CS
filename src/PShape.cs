@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace Augmenta
 {
-    public class PShape<T> : PContainer<T> where T : struct
+    internal class PShape<T> : PContainer<T> where T : struct
     {
         public Shape<T> shape;
         public PShape(BasePleiadesClient client, JSONObject o, PContainer<T> parent, ContainerType type) : base(client, o, parent, type)
@@ -67,7 +67,7 @@ namespace Augmenta
         }
     }
 
-    public class Shape<T> where T : struct
+    internal class Shape<T> where T : struct
     {
         public enum ShapeType { Sphere, Box, Cylinder, Cone, Plane, Mesh }
         public ShapeType shapeType;
@@ -81,7 +81,7 @@ namespace Augmenta
         virtual public void handleParamUpdate(string prop, JSONObject data) { }
     }
 
-    public class SphereShape<T> : Shape<T> where T : struct
+    internal class SphereShape<T> : Shape<T> where T : struct
     {
         public float radius;
 
@@ -98,7 +98,7 @@ namespace Augmenta
 
     }
 
-    public class BoxShape<T> : Shape<T> where T : struct
+    internal class BoxShape<T> : Shape<T> where T : struct
     {
         public T size;
         public BoxShape(JSONObject o) : base(o, ShapeType.Box)
@@ -113,7 +113,7 @@ namespace Augmenta
         }
     }
 
-    public class CylinderShape<T> : Shape<T> where T : struct
+    internal class CylinderShape<T> : Shape<T> where T : struct
     {
         public float radius;
         public float height;
@@ -131,7 +131,7 @@ namespace Augmenta
         }
     }
 
-    public class ConeShape<T> : Shape<T> where T : struct
+    internal class ConeShape<T> : Shape<T> where T : struct
     {
         public float radius;
         public float height;
@@ -150,7 +150,7 @@ namespace Augmenta
         }
     }
 
-    public class MeshShape<T> : Shape<T> where T : struct
+    internal class MeshShape<T> : Shape<T> where T : struct
     {
         public List<T> points;
         public MeshShape(JSONObject o) : base(o, ShapeType.Mesh)

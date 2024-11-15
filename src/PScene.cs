@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace Augmenta
 {
-    public class PScene<T> : PContainer<T> where T : struct
+    internal class PScene<T> : PContainer<T> where T : struct
     {
         public T size;
         public PScene(BasePleiadesClient client, JSONObject o, PContainer<T> parent) : base(client, o, parent, ContainerType.Scene)

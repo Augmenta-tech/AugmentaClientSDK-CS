@@ -7,7 +7,7 @@ using System.Diagnostics;
 namespace Augmenta
 {
     public enum ContainerType { Container, Zone, Scene }
-    abstract public class BasePContainer
+    abstract internal class BasePContainer
     {
 
         public ContainerType containerType;
@@ -92,7 +92,7 @@ namespace Augmenta
 
     }
 
-    public class PContainer<T> : BasePContainer where T : struct
+    internal class PContainer<T> : BasePContainer where T : struct
     {
         public T position;
         public T rotation;

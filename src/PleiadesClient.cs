@@ -6,7 +6,7 @@ using UnityEditor.Build;
 
 namespace Augmenta
 {
-    abstract public class BasePleiadesClient
+    abstract internal class BasePleiadesClient
     {
         public Dictionary<int, BasePObject> objects = new Dictionary<int, BasePObject>();
         public BasePContainer worldContainer;
@@ -210,7 +210,7 @@ namespace Augmenta
             containers.Clear();
         }
     }
-    public class PleiadesClient<ObjectT, T> : BasePleiadesClient where ObjectT : BasePObject, new() where T : struct
+    internal class PleiadesClient<ObjectT, T> : BasePleiadesClient where ObjectT : BasePObject, new() where T : struct
     {
         public PleiadesClient() : base()
         {
