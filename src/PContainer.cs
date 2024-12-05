@@ -29,8 +29,8 @@ namespace Augmenta
             this.parent = parent;
             this.client = client;
 
-            name = o["name"].str;
             isRoot = !o.HasField("id");
+            name = o["name"].str;
 
             id = isRoot ? null : o["id"].str;
             if (!isRoot) client.registerContainer(this);
@@ -43,7 +43,7 @@ namespace Augmenta
 
             if (o.HasField("children"))
             {
-                for (int i= 0;i < o["children"].Count;i++)
+                for (int i = 0; i < o["children"].Count; i++)
                 {
                     JSONObject c = o["children"][i];
                     if (c.HasField("type"))
@@ -124,7 +124,7 @@ namespace Augmenta
 
         protected override void handleParamUpdateInternal(string prop, JSONObject data)
         {
-            if (prop == "position")  position = Utils.GetVector<T>(data);
+            if (prop == "position") position = Utils.GetVector<T>(data);
             else if (prop == "rotation") rotation = Utils.GetVector<T>(data);
         }
 

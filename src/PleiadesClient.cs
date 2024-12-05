@@ -66,7 +66,7 @@ namespace Augmenta
                 worldContainer.clear();
             }
 
-            worldContainer = createContainer(data);
+            worldContainer = createContainer(data[0]);
 
         }
 
