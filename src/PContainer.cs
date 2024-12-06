@@ -3,6 +3,7 @@ using System.Numerics;
 using System;
 using System.Reflection;
 using System.Diagnostics;
+using System.Drawing;
 
 namespace Augmenta
 {
@@ -98,6 +99,7 @@ namespace Augmenta
     {
         public T position;
         public T rotation;
+        public Color color;
 
         public PContainer(BasePleiadesClient client = null, JSONObject o = null, BasePContainer parent = null, ContainerType type = ContainerType.Container) :
             base(client, o, parent, type)
@@ -106,6 +108,7 @@ namespace Augmenta
             {
                 position = Utils.GetVector<T>(o["position"]);
                 rotation = Utils.GetVector<T>(o["rotation"]);
+                color = Utils.GetColor(o["color"]);
             }
         }
 
@@ -129,6 +132,7 @@ namespace Augmenta
         {
             if (prop == "position") position = Utils.GetVector<T>(data);
             else if (prop == "rotation") rotation = Utils.GetVector<T>(data);
+            else if (prop == "color") color = Utils.GetColor(data);
         }
 
         public override string ToString()

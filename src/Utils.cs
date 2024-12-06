@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -24,6 +25,11 @@ namespace Augmenta
         internal static T GetVector<T>(JSONObject v)
         {
             return (T)Activator.CreateInstance(typeof(T), new object[] { v[0].f, v[1].f, v[2].f });
+        }
+
+        internal static Color GetColor(JSONObject v)
+        {
+            return Color.FromArgb((int)(v[3].f * 255), (int)(v[0].f * 255), (int)(v[1].f * 255), (int)(v[2].f * 255));
         }
     }
 }
