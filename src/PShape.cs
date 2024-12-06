@@ -12,14 +12,14 @@ namespace Augmenta
         public PShape(BasePleiadesClient client, JSONObject o, PContainer<T> parent, ContainerType type) : base(client, o, parent, type)
         {
             setupShape(o["shape"]);
-            UnityEngine.Debug.Log("PShape " + o.ToString());
+            //UnityEngine.Debug.Log("PShape " + o.ToString());
 
         }
 
         protected override void handleParamUpdateInternal(string prop, JSONObject data)
         {
             base.handleParamUpdateInternal(prop, data);
-            if (prop == "shape") setupShape(data["shape"]);
+            if (prop == "shape") setupShape(data);
             else if (prop == "shapeParam")
             {
                 if (shape != null)
@@ -34,12 +34,20 @@ namespace Augmenta
 
         void setupShape(JSONObject o)
         {
-            UnityEngine.Debug.Log("Setup shape " + o.ToString());
-            if (shape != null)
-                shape = null;
-
             if (o == null)
                 return;
+
+            //UnityEngine.Debug.Log("Setup shape " + o.ToString());
+
+            if (shape != null && shape.isType(o["type"].str))
+            {
+                foreach (var prop in o.keys) shape.handleParamUpdate(prop, o[prop]);
+                return;
+            }
+
+            shape = null;
+
+
 
             switch (o["type"].str)
             {
@@ -70,14 +78,18 @@ namespace Augmenta
     internal class Shape<T> where T : struct
     {
         public enum ShapeType { Sphere, Box, Cylinder, Cone, Plane, Mesh }
+        public static string[] ShapeTypeIds = { "Sphere", "Box", "Cylinder", "Cone", "Plane", "Mesh" };
         public ShapeType shapeType;
 
         public Shape(JSONObject o, ShapeType st)
         {
             shapeType = st;
-            UnityEngine.Debug.Log("Shape " + o.ToString());
         }
 
+        public bool isType(string type)
+        {
+            return ShapeTypeIds[(int)shapeType] == type;
+        }
         virtual public void handleParamUpdate(string prop, JSONObject data) { }
     }
 

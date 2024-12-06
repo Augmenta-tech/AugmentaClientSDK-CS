@@ -14,7 +14,7 @@ namespace Augmenta
 
         public bool isRoot;
         public string name;
-        public string id;
+        public string address;
 
         public BasePleiadesClient client;
         public BasePContainer parent;
@@ -29,16 +29,18 @@ namespace Augmenta
             this.parent = parent;
             this.client = client;
 
-            isRoot = !o.HasField("id");
+            isRoot = this.parent == null;
             name = o["name"].str;
+            address = isRoot ? "/" : o["address"].str;
 
-            id = isRoot ? null : o["id"].str;
+            //id = isRoot ? null : o["id"].str;
             if (!isRoot) client.registerContainer(this);
             setup(o);
         }
 
         protected void setup(JSONObject o)
         {
+
             children = new List<BasePContainer>();
 
             if (o.HasField("children"))
@@ -97,7 +99,8 @@ namespace Augmenta
         public T position;
         public T rotation;
 
-        public PContainer(BasePleiadesClient client = null, JSONObject o = null, BasePContainer parent = null, ContainerType type = ContainerType.Container) : base(client, o, parent, type)
+        public PContainer(BasePleiadesClient client = null, JSONObject o = null, BasePContainer parent = null, ContainerType type = ContainerType.Container) :
+            base(client, o, parent, type)
         {
             if (!isRoot)
             {
@@ -130,7 +133,7 @@ namespace Augmenta
 
         public override string ToString()
         {
-            return "[Container (" + containerType + ") : " + name + ", " + id + "]";
+            return "[Container (" + containerType + ") : " + name + ", " + address + "]";
         }
     }
 }

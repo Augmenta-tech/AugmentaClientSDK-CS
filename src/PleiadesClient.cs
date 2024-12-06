@@ -12,11 +12,11 @@ namespace Augmenta
         public BasePContainer worldContainer;
         protected BasePContainer workingScene; //the scene provided in the bundle data on receive
 
-        protected List<BasePContainer> containers;
+        protected Dictionary<string, BasePContainer> addressContainerMap;
 
         public BasePleiadesClient()
         {
-            containers = new List<BasePContainer>();
+            addressContainerMap = new Dictionary<string, BasePContainer>();
         }
 
         //Call once per frame
@@ -52,9 +52,9 @@ namespace Augmenta
             }
             else if (o.HasField("update"))
             {
-                var id = o["update"]["id"].str;
-                var data = o["update"]["data"];
-                var container = getContainerForAddress(id);
+                var data = o["update"];
+                var address = o["update"]["address"].str;
+                var container = getContainerForAddress(address);
                 if (container != null) container.handleUpdate(data);
             }
         }
@@ -145,7 +145,6 @@ namespace Augmenta
                 if (worldContainer == null) return;
                 workingScene = getContainerForAddress(sceneID);
 
-
             }
 
             //if (workingScene != null) UnityEngine.Debug.Log("working scene found : " + workingScene);
@@ -157,25 +156,21 @@ namespace Augmenta
 
         public virtual void registerContainer(BasePContainer c)
         {
-            if (containers == null) containers = new List<BasePContainer>();
-            containers.Add(c);
+            if (addressContainerMap == null) addressContainerMap = new Dictionary<string, BasePContainer>();
+            addressContainerMap.Add(c.address, c);
             //UnityEngine.Debug.Log("Container registered " + c);
         }
 
         public virtual void unregisterContainer(BasePContainer c)
         {
-            containers.Remove(c);
+            addressContainerMap.Remove(c.address);
         }
 
-        public BasePContainer getContainerForAddress(string id)
+        public BasePContainer getContainerForAddress(string address)
         {
-            foreach (var c in containers)
-            {
-                //UnityEngine.Debug.Log("container id " + c.id + " <> " + id);
-                if (c.id == id) return c;
-            }
-            return null;
+            return addressContainerMap[address];
         }
+
         protected void onObjectRemove(BasePObject o)
         {
             removeObject(o);
@@ -207,7 +202,7 @@ namespace Augmenta
                 worldContainer.clear();
                 worldContainer = null;
             }
-            containers.Clear();
+            addressContainerMap.Clear();
         }
     }
     internal class PleiadesClient<ObjectT, T> : BasePleiadesClient where ObjectT : BasePObject, new() where T : struct

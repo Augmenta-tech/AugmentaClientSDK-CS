@@ -67,8 +67,6 @@ namespace Augmenta
         public ArraySegment<T> points => new ArraySegment<T>(pointsA, 0, pointCount);
 
         //cluster
-
-
         public T centroid;
         public T velocity;
         public T minBounds;
