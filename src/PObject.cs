@@ -69,8 +69,8 @@ namespace Augmenta
         //cluster
         public T centroid;
         public T velocity;
-        public T minBounds;
-        public T maxBounds;
+        public T boxCenter;
+        public T boxSize;
         public T rotation;
 
         //[Range(0, 1)]
@@ -141,8 +141,8 @@ namespace Augmenta
 
             centroid = clusterData[0];
             velocity = clusterData[1];
-            minBounds = clusterData[2];
-            maxBounds = clusterData[3];
+            boxCenter = clusterData[2];
+            boxSize = clusterData[3]; 
 
             int weightDataIndex = offset + 4 + numProperties * 12;
             weight = Utils.ReadFloat(data, weightDataIndex);
