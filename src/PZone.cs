@@ -24,39 +24,39 @@ namespace Augmenta
 
         public virtual void processData(float time, ReadOnlySpan<byte> data, int offset)
         {
-            int numEntered = Utils.ReadInt(data, offset);
-            if (numEntered > 0 && enterEvent != null) enterEvent.Invoke(numEntered);
+            byte numEntered = data[offset];
+            if (numEntered > 0 && enterEvent != null) enterEvent.Invoke((int)numEntered);
 
-            int numExited = Utils.ReadInt(data, offset + 4);
-            if (numExited > 0 && exitEvent != null) exitEvent.Invoke(numExited);
+            byte numExited = data[offset + 1];
+            if (numExited > 0 && exitEvent != null) exitEvent.Invoke((int)numExited);
 
-            presence = Utils.ReadInt(data, offset + 8);
-            density = Utils.ReadFloat(data, offset + 12);
+            presence = Utils.ReadInt(data, offset + 2);
+            density = Utils.ReadFloat(data, offset + 6);
 
-            int extraDataCount = Utils.ReadInt(data, offset + 16);
+            int extraDataCount = Utils.ReadInt(data, offset + 10);
             int curExtra = 0;
-            int extraPos = offset + 20;
+            int extraPos = offset + 14; 
             while (curExtra < extraDataCount)
             {
                 int extraSize = Utils.ReadInt(data, extraPos);
-                byte extraType = data[extraPos + 5];
+                byte extraType = data[extraPos + 4];
                 switch (extraType)
                 {
                     case 0: //slider
                         {
-                            sliderValue = Utils.ReadFloat(data, extraPos + 6);
+                            sliderValue = Utils.ReadFloat(data, extraPos + 5);
                         }
                         break;
-
+                         
                     case 1:
                         {
-                            padX = Utils.ReadFloat(data, extraPos + 6);
-                            padY = Utils.ReadFloat(data, extraPos + 10);
+                            padX = Utils.ReadFloat(data, extraPos + 5);
+                            padY = Utils.ReadFloat(data, extraPos + 9);
                         }
                         break;
 
                     case 2: //cloud, to be handled internally
-                        processCloudInternal(time, data, extraPos);
+                        processCloudInternal(time, data, extraPos + 5);
                         break;
 
                 }
