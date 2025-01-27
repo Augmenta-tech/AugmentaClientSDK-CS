@@ -80,11 +80,12 @@ namespace Augmenta
 
         public override void updateData(float time, ReadOnlySpan<byte> data, int offset)
         {
-            var pos = offset + 1 + 2 * sizeof(int); //packet type (1) + packet size (4) + objectID (4)
+            var propertiesCount = Utils.ReadInt(data, offset + 4); //first data is ID (4 bytes)
+            var pos = offset + 8;
             while (pos < data.Length)
             {
-                var propertyID = Utils.ReadInt(data, pos);
-                var propertySize = Utils.ReadInt(data, pos + sizeof(int));
+                var propertySize = Utils.ReadInt(data, pos);
+                var propertyID = Utils.ReadInt(data, pos + 4);
 
                 if (propertySize < 0)
                 {
@@ -92,10 +93,12 @@ namespace Augmenta
                     break;
                 }
 
+                var propertyDataPos = pos + 8;
+
                 switch (propertyID)
                 {
-                    case 0: updatePointsData(data, pos + 2 * sizeof(int)); break;
-                    case 1: updateClusterData(data, pos + 2 * sizeof(int)); break;
+                    case 0: updatePointsData(data, propertyDataPos); break;
+                    case 1: updateClusterData(data, propertyDataPos); break;
                 }
 
                 pos += propertySize;
@@ -142,7 +145,7 @@ namespace Augmenta
             centroid = clusterData[0];
             velocity = clusterData[1];
             boxCenter = clusterData[2];
-            boxSize = clusterData[3]; 
+            boxSize = clusterData[3];
 
             int weightDataIndex = offset + 4 + numProperties * 12;
             weight = Utils.ReadFloat(data, weightDataIndex);

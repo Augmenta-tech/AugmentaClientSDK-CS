@@ -65,47 +65,56 @@ namespace Augmenta
                 worldContainer.clear();
             }
 
+            if (data == null)
+            {
+                return;
+            }
+
             worldContainer = createContainer(data[0]);
 
         }
 
         public void processData(float time, ReadOnlySpan<byte> data, int offset = 0)
         {
-            var type = data[offset];
-
+            var packetSize = Utils.ReadInt(data, offset);
+            var type = data[offset + 4];
 
             if (type == 255) //bundle
             {
                 workingScene = null;
 
-                var pos = offset + 1; //offset + sizeof(packettype)
-                while (pos < data.Length - 5) //-sizeof(packettype) - sizeof(packetsize)
+                var packetCount = Utils.ReadInt(data, offset + 5);
+                var pos = offset + 9; //start of child packets
+
+                while (pos < data.Length - 4)
                 {
-                    var packetSize = Utils.ReadInt(data, pos + 1);  //pos + sizeof(packettype)
-                    processData(time, data.Slice(pos, packetSize), 0);
-                    pos += packetSize;
+                    var pSize = Utils.ReadInt(data, pos);
+                    processData(time, data, pos);
+                    pos += pSize;
                 }
             }
 
             //Debug.Log("Packet type : " + type);
 
+            var packetDataPos = offset + 5;
+
             switch (type)
             {
                 case 0: //Object
                     {
-                        processObject(time, data, offset);
+                        processObject(time, data, packetDataPos);
                     }
                     break;
 
                 case 1: //Zone
                     {
-                        processZone(time, data, offset);
+                        processZone(time, data, packetDataPos);
                     }
                     break;
 
                 case 2:
                     {
-                        processScene(time, data, offset);
+                        processScene(time, data, packetDataPos);
                     }
                     break;
             }
@@ -113,7 +122,7 @@ namespace Augmenta
 
         private void processObject(float time, ReadOnlySpan<byte> data, int offset)
         {
-            var objectID = Utils.ReadInt(data, offset + 1 + sizeof(int)); //offset + sizeof(packettype) + sizeof(packetsize)
+            var objectID = Utils.ReadInt(data, offset);
 
             BasePObject o = null;
             if (objects.ContainsKey(objectID)) o = objects[objectID];
@@ -127,14 +136,14 @@ namespace Augmenta
 
         void processZone(float time, ReadOnlySpan<byte> data, int offset)
         {
-
+            processZoneInternal(time, data, offset);
         }
 
+        virtual protected void processZoneInternal(float time, ReadOnlySpan<byte> data, int offset) { }
         void processScene(float time, ReadOnlySpan<byte> data, int offset)
         {
-            var sizeOffset = offset + 1 + sizeof(int);
-            var sceneIDSize = Utils.ReadInt(data, sizeOffset); //offset + sizeof(packettype) + sizeof(packetsize)
-            var sceneID = Utils.ReadString(data, sizeOffset + sizeof(int), sceneIDSize);
+            var sceneIDSize = Utils.ReadInt(data, offset);
+            var sceneID = Utils.ReadString(data, offset + 4, sceneIDSize);
 
             if (sceneID == "")
             {
@@ -239,6 +248,16 @@ namespace Augmenta
             base.removeObject(o);
         }
         protected virtual void removeObjectInternal(ObjectT o) { }
+
+        protected override void processZoneInternal(float time, ReadOnlySpan<byte> data, int offset)
+        {
+            var zoneIDSize = Utils.ReadInt(data, offset);
+            var zoneID = Utils.ReadString(data, offset + 4, zoneIDSize);
+
+            PZone<T> zone = addressContainerMap[zoneID] as PZone<T>;
+            if (zone == null) return;
+            zone.processData(time, data, offset + 4 + zoneIDSize);
+        }
 
     }
 }
