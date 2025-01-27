@@ -61,8 +61,8 @@ namespace Augmenta
 
                 }
                 curExtra++;
+                extraPos += extraSize;
             }
-            extraPos += extraSize;
         }
 
 
@@ -71,6 +71,6 @@ namespace Augmenta
             //to be implemented by derived classes
         }
 
-     
+
     }
 }
