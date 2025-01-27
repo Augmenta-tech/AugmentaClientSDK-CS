@@ -177,6 +177,7 @@ namespace Augmenta
 
         public BasePContainer getContainerForAddress(string address)
         {
+            if (!addressContainerMap.ContainsKey(address)) return null;
             return addressContainerMap[address];
         }
 
@@ -254,7 +255,7 @@ namespace Augmenta
             var zoneIDSize = Utils.ReadInt(data, offset);
             var zoneID = Utils.ReadString(data, offset + 4, zoneIDSize);
 
-            PZone<T> zone = addressContainerMap[zoneID] as PZone<T>;
+            PZone<T> zone = getContainerForAddress(zoneID) as PZone<T>;
             if (zone == null) return;
             zone.processData(time, data, offset + 4 + zoneIDSize);
         }
