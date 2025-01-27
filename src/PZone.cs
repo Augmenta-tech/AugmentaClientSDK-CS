@@ -7,6 +7,8 @@ namespace Augmenta
 {
     internal class PZone<T> : PShape<T> where T : struct
     {
+        public int sliderAxis = 0; // 0 = x, 1 = y, 2 = z
+
         public int presence = 0;
         public float density = 0;
         public float sliderValue = 0;
@@ -20,6 +22,7 @@ namespace Augmenta
 
         public PZone(BasePleiadesClient client, JSONObject o, PContainer<T> parent) : base(client, o, parent, ContainerType.Zone)
         {
+            setupSliderAxis(o["localSliderAxis"]);
         }
 
         public virtual void processData(float time, ReadOnlySpan<byte> data, int offset)
@@ -35,7 +38,7 @@ namespace Augmenta
 
             int extraDataCount = Utils.ReadInt(data, offset + 10);
             int curExtra = 0;
-            int extraPos = offset + 14; 
+            int extraPos = offset + 14;
             while (curExtra < extraDataCount)
             {
                 int extraSize = Utils.ReadInt(data, extraPos);
@@ -47,7 +50,7 @@ namespace Augmenta
                             sliderValue = Utils.ReadFloat(data, extraPos + 5);
                         }
                         break;
-                         
+
                     case 1:
                         {
                             padX = Utils.ReadFloat(data, extraPos + 5);
@@ -65,12 +68,26 @@ namespace Augmenta
             }
         }
 
+        protected override void handleParamUpdateInternal(string prop, JSONObject data)
+        {
+            base.handleParamUpdateInternal(prop, data);
+            if (prop == "localSliderAxis") setupSliderAxis(data);
+        }
+
 
         protected virtual void processCloudInternal(float time, ReadOnlySpan<byte> data, int offset)
         {
             //to be implemented by derived classes
         }
 
+
+        private void setupSliderAxis(JSONObject data)
+        {
+            string axisStr = data.str;
+            if (axisStr == "x") sliderAxis = 0;
+            else if (axisStr == "y") sliderAxis = 1;
+            else if (axisStr == "z") sliderAxis = 2;
+        }
 
     }
 }
