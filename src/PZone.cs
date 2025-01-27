@@ -60,7 +60,9 @@ namespace Augmenta
                         break;
 
                 }
+                curExtra++;
             }
+            extraPos += extraSize;
         }
 
 
