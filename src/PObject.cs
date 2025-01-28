@@ -15,6 +15,8 @@ namespace Augmenta
         public bool drawDebug;
 
         public float weight;
+        public bool isCluster;
+
         public enum PositionUpdateMode { None, Centroid, BoxCenter }
         public PositionUpdateMode posUpdateMode = PositionUpdateMode.Centroid;
         public enum CoordMode { Absolute, Relative }
@@ -67,6 +69,7 @@ namespace Augmenta
         public ArraySegment<T> points => new ArraySegment<T>(pointsA, 0, pointCount);
 
         //cluster
+
         public T centroid;
         public T velocity;
         public T boxCenter;
@@ -80,6 +83,7 @@ namespace Augmenta
 
         public override void updateData(float time, ReadOnlySpan<byte> data, int offset)
         {
+
             var propertiesCount = Utils.ReadInt(data, offset + 4); //first data is ID (4 bytes)
             var pos = offset + 8;
             while (pos < data.Length)
@@ -98,7 +102,10 @@ namespace Augmenta
                 switch (propertyID)
                 {
                     case 0: updatePointsData(data, propertyDataPos); break;
-                    case 1: updateClusterData(data, propertyDataPos); break;
+                    case 1:
+                        isCluster = true;
+                        updateClusterData(data, propertyDataPos); 
+                        break;
                 }
 
                 pos += propertySize;
