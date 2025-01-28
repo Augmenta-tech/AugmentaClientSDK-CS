@@ -22,7 +22,12 @@ namespace Augmenta
             return Encoding.UTF8.GetString(data.Slice(offset, length));
         }
 
-        internal static T GetVector<T>(JSONObject v)
+        internal static ReadOnlySpan<T> ReadVectors<T>(ReadOnlySpan<byte> data, int offset, int length) where T : struct
+        {
+            return MemoryMarshal.Cast<byte, T>(data.Slice(offset, length));
+        }
+
+        internal static T GetVector<T>(JSONObject v) where T : struct
         {
             return (T)Activator.CreateInstance(typeof(T), new object[] { v[0].f, v[1].f, v[2].f });
         }

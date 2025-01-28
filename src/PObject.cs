@@ -110,7 +110,7 @@ namespace Augmenta
         void updatePointsData(ReadOnlySpan<byte> data, int offset)
         {
             pointCount = Utils.ReadInt(data, offset);
-            var vectors = ReadVectors(data, offset + sizeof(int), pointCount * 12);
+            var vectors = Utils.ReadVectors<T>(data, offset + sizeof(int), pointCount * 12);
 
             if (pointsA.Length < pointCount)
                 pointsA = new T[(int)(pointCount * 1.5)];
@@ -173,9 +173,6 @@ namespace Augmenta
         {
             return MemoryMarshal.Cast<byte, T>(data.Slice(offset))[0];
         }
-        protected ReadOnlySpan<T> ReadVectors(ReadOnlySpan<byte> data, int offset, int length)
-        {
-            return MemoryMarshal.Cast<byte, T>(data.Slice(offset, length));
-        }
+        
     }
 }
