@@ -2,6 +2,7 @@ using System;
 using System.Drawing;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using static Augmenta.BasePObject;
 
 namespace Augmenta
 {
@@ -18,6 +19,10 @@ namespace Augmenta
         public delegate void EnterExitEvent(int count);
         public EnterExitEvent enterEvent;
         public EnterExitEvent exitEvent;
+
+        private T[] pointsA = new T[0];
+        private int pointCount;
+        public ArraySegment<T> points => new ArraySegment<T>(pointsA, 0, pointCount);
 
 
         public PZone(BasePleiadesClient client, JSONObject o, PContainer<T> parent) : base(client, o, parent, ContainerType.Zone)
@@ -78,6 +83,16 @@ namespace Augmenta
         protected virtual void processCloudInternal(float time, ReadOnlySpan<byte> data, int offset)
         {
             //to be implemented by derived classes
+            pointCount = Utils.ReadInt(data, offset);
+
+            var vectors = Utils.ReadVectors<T>(data, offset + sizeof(int), pointCount * 12);
+
+            if (pointsA.Length < pointCount)
+                pointsA = new T[(int)(pointCount * 1.5)];
+
+            for (int i = 0; i < vectors.Length; i++)
+                updateCloudPoint(ref pointsA[i], vectors[i]);
+
         }
 
 

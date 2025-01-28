@@ -135,6 +135,11 @@ namespace Augmenta
             else if (prop == "color") color = Utils.GetColor(data);
         }
 
+        virtual protected void updateCloudPoint(ref T pointInArray, T point)
+        {
+            pointInArray = point; //no transformation by default
+        }
+
         public override string ToString()
         {
             return "[Container (" + containerType + ") : " + name + ", " + address + "]";
