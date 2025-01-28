@@ -65,6 +65,8 @@ namespace Augmenta
                 worldContainer.clear();
             }
 
+            addressContainerMap.Clear();
+
             if (data == null)
             {
                 return;
