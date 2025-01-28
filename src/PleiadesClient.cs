@@ -38,6 +38,7 @@ namespace Augmenta
 
         public void processMessage(string message)
         {
+            
             JSONObject o = new JSONObject(message);
             if (o.HasField("status"))
             {
