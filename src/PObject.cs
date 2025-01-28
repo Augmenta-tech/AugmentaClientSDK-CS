@@ -115,14 +115,16 @@ namespace Augmenta
             if (pointsA.Length < pointCount)
                 pointsA = new T[(int)(pointCount * 1.5)];
 
-            if (pointMode == CoordMode.Absolute)
-                vectors.CopyTo(pointsA.AsSpan());
-            else
-            {
-                for (int i = 0; i < vectors.Length; i++)
-                    updateCloudPoint(ref pointsA[i], vectors[i]);
+            vectors.CopyTo(pointsA.AsSpan());
+            
+            //We're deciding to not use custom transformation here, final client will take care of this
+            //if (pointMode == CoordMode.Absolute)
+            //else
+            //{
+            //    for (int i = 0; i < vectors.Length; i++)
+            //        updateCloudPoint(ref pointsA[i], vectors[i]);
 
-            }
+            //}
         }
 
         override protected void updateClusterData(ReadOnlySpan<byte> data, int offset)
@@ -135,9 +137,11 @@ namespace Augmenta
             {
                 var si = offset + sizeof(int) + i * 12;
 
-                var p = ReadVector(data, si);
-                if (i == 1) clusterData[i] = p; //don't transform the velocity, it's already in world space
-                else updateClusterPoint(ref clusterData[i], p);
+                clusterData[i] = ReadVector(data, si);
+
+                //We're deciding to not use custom transformation here, final client will take care of this
+                //if (i == 1) clusterData[i] = p; //don't transform the velocity, it's already in world space
+                //else updateClusterPoint(ref clusterData[i], p);
                 //UnityEngine.Debug.Log(i + " : " + p.ToString()+" <> " + clusterData[i].ToString());
 
             }
@@ -165,14 +169,14 @@ namespace Augmenta
             velocity = default;
         }
 
-        abstract protected void updateCloudPoint(ref T pointInArray, T point);
-        abstract protected void updateClusterPoint(ref T pointInArray, T point);
+        //abstract protected void updateCloudPoint(ref T pointInArray, T point);
+        //abstract protected void updateClusterPoint(ref T pointInArray, T point);
         abstract protected void updateTransform();
 
         virtual protected T ReadVector(ReadOnlySpan<byte> data, int offset)
         {
             return MemoryMarshal.Cast<byte, T>(data.Slice(offset))[0];
         }
-        
+
     }
 }
