@@ -38,8 +38,6 @@ namespace Augmenta
 
         public void processMessage(string message)
         {
-            
-
             JSONObject o = new JSONObject(message);
             if (o.HasField("status"))
             {
@@ -78,8 +76,11 @@ namespace Augmenta
 
         }
 
-        public void processData(float time, ReadOnlySpan<byte> data, int offset = 0)
+        public virtual void processData(float time, byte[] bytes, int offset = 0, bool decompress = false)
         {
+            if (decompress) bytes = Utils.DecompressData(bytes);
+            ReadOnlySpan<byte> data = bytes;
+
             var packetSize = Utils.ReadInt(data, offset);
             var type = data[offset + 4];
 
@@ -93,7 +94,7 @@ namespace Augmenta
                 while (pos < data.Length - 4)
                 {
                     var pSize = Utils.ReadInt(data, pos);
-                    processData(time, data, pos);
+                    processData(time, bytes, pos);
                     pos += pSize;
                 }
             }

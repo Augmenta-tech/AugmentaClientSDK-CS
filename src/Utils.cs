@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
+using ZstdNet;
 
 namespace Augmenta
 {
@@ -35,6 +36,11 @@ namespace Augmenta
         internal static Color GetColor(JSONObject v)
         {
             return Color.FromArgb((int)(v[3].f * 255), (int)(v[0].f * 255), (int)(v[1].f * 255), (int)(v[2].f * 255));
+        }
+
+        internal static byte[] DecompressData(byte[] data)
+        {
+            return new Decompressor().Unwrap(data);
         }
     }
 }
