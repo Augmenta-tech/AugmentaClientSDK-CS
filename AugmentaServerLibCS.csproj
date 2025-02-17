@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>Augmenta</RootNamespace>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <AssemblyName>AugmentaServerLibCS</AssemblyName>
+    <Title>Augmenta Server Library C#</Title>
+    <Authors>augmenta</Authors>
+    <Company>Augmenta</Company>
+    <PackageIcon>icon.png</PackageIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="icon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\Downloads\icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ZstdNet" Version="1.4.5" />
+  </ItemGroup>
+
+</Project>

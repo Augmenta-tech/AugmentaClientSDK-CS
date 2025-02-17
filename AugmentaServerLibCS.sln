@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35806.99 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AugmentaServerLibCS", "AugmentaServerLibCS.csproj", "{D585D681-D9E4-46F9-BE7F-62401F9B04DF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D585D681-D9E4-46F9-BE7F-62401F9B04DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D585D681-D9E4-46F9-BE7F-62401F9B04DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D585D681-D9E4-46F9-BE7F-62401F9B04DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D585D681-D9E4-46F9-BE7F-62401F9B04DF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {29D04515-9EF8-407E-B5FA-0B8DFD973A95}
+	EndGlobalSection
+EndGlobal
