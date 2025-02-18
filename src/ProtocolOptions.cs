@@ -16,15 +16,16 @@ namespace Augmenta
     {
         public enum AxisMode
         {
-            z_up_right,
-            z_up_left,
-            y_up_left,
+            ZUpRightHanded,
+            ZUpLeftHanded,
+            YUpRightHanded,
+            YUpLeftHanded,
         };
 
         public enum OriginMode
         {
-            bottom_left,
-            bottom_right
+            BottomLeft,
+            BottomRight,
         };
 
         public enum CoordinateSpace
@@ -34,8 +35,8 @@ namespace Augmenta
             Normalized,
         };
 
-        public AxisMode axis = AxisMode.z_up_right;
-        public OriginMode origin = OriginMode.bottom_left;
+        public AxisMode axis = AxisMode.ZUpRightHanded;
+        public OriginMode origin = OriginMode.BottomLeft;
         public bool flipX = false;
         public bool flipY = false;
         public bool flipZ = false;
@@ -61,7 +62,7 @@ namespace Augmenta
         public bool streamClusterPoints = true;
         public bool streamZonePoints = false;
         public RotationMode boxRotationMode = RotationMode.Quaternions;
-        public AxisTransform axisTransform = new AxisTransform(); // TODO: Default ?
+        public AxisTransform axisTransform = new AxisTransform();
         public bool useCompression = true;
         public bool usePolling = false;
     }

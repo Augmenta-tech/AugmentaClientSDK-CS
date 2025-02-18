@@ -278,7 +278,19 @@ namespace Augmenta
             optionsJson.AddField("streamZonePoints", options.streamZonePoints);
             optionsJson.AddField("useCompression", options.useCompression);
             optionsJson.AddField("usePolling", options.usePolling);
-            optionsJson.AddField("boxRotationMode", nameof(options.boxRotationMode));
+
+            switch(options.boxRotationMode)
+            {
+                case ProtocolOptions.RotationMode.Quaternions:
+                    optionsJson.AddField("boxRotationMode", "quaternions");
+                    break;
+                case ProtocolOptions.RotationMode.Radians:
+                    optionsJson.AddField("boxRotationMode", "radians");
+                    break;
+                case ProtocolOptions.RotationMode.Degrees:
+                    optionsJson.AddField("boxRotationMode", "degrees");
+                    break;
+            }
 
             JSONObject tagsJson = JSONObject.Create();
             foreach (var tag in options.tags)
@@ -288,12 +300,50 @@ namespace Augmenta
             optionsJson.AddField("tags", tagsJson);
 
             JSONObject axisTransformJson = JSONObject.Create();
-            axisTransformJson.AddField("axis", nameof(options.axisTransform.axis));
-            axisTransformJson.AddField("origin", nameof(options.axisTransform.origin));
+            switch(options.axisTransform.axis)
+            {
+                case AxisTransform.AxisMode.ZUpRightHanded:
+                    axisTransformJson.AddField("axis", "z_up_right");
+                    break;
+                case AxisTransform.AxisMode.ZUpLeftHanded:
+                    axisTransformJson.AddField("axis", "z_up_left");
+                    break;
+                case AxisTransform.AxisMode.YUpRightHanded:
+                    axisTransformJson.AddField("axis", "y_up_right");
+                    break;
+                case AxisTransform.AxisMode.YUpLeftHanded:
+                    axisTransformJson.AddField("axis", "y_up_left");
+                    break;
+            }
+
+            switch(options.axisTransform.origin)
+            {
+                case AxisTransform.OriginMode.BottomLeft:
+                    axisTransformJson.AddField("origin", "bottom_left");
+                    break;
+                case AxisTransform.OriginMode.BottomRight:
+                    axisTransformJson.AddField("origin", "bottom_right");
+                    break;
+            }
+
             axisTransformJson.AddField("flipX", options.axisTransform.flipX);
             axisTransformJson.AddField("flipY", options.axisTransform.flipY);
             axisTransformJson.AddField("flipZ", options.axisTransform.flipZ);
-            axisTransformJson.AddField("coordinateSpace", nameof(options.axisTransform.coordinateSpace));
+
+            switch(options.axisTransform.coordinateSpace)
+            {
+                case AxisTransform.CoordinateSpace.Absolute:
+                    axisTransformJson.AddField("coordinateSpace", "absolute");
+                    break;
+                case AxisTransform.CoordinateSpace.Relative:
+                    axisTransformJson.AddField("coordinateSpace", "relative");
+                    break;
+                case AxisTransform.CoordinateSpace.Normalized:
+                    axisTransformJson.AddField("coordinateSpace", "normalized");
+                    break;
+
+            }
+
             // TODO: OriginOffset
             // TODO: customMatrix
 
