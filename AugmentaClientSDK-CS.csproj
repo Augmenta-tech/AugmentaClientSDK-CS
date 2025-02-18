@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>Augmenta</RootNamespace>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>Augmenta Client SDK C#</Title>
+    <Authors>augmenta</Authors>
+    <Company>Augmenta</Company>
+    <PackageId>augmenta.client.sdk</PackageId>
+    <Description>Contains everything you need to build your own client for the Augmenta tracking system for interactive experiences.</Description>
+    <PackageIcon>augmenta_icon.png</PackageIcon>
+    <PackageProjectUrl>https://augmenta.tech/</PackageProjectUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ZstdNet" Version="1.4.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="resources\augmenta_icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>
