@@ -19,12 +19,12 @@ namespace Augmenta
         }
 
         //Call once per frame
-        virtual public void update(float time)
+        virtual public void Update(float time)
         {
             var objectsToRemove = new List<int>();
             foreach (var o in objects.Values)
             {
-                o.update(time);
+                o.Update(time);
                 if (o.timeSinceGhost > 1)
                     objectsToRemove.Add(o.objectID);
             }
@@ -32,11 +32,11 @@ namespace Augmenta
             foreach (var oid in objectsToRemove)
             {
                 var o = objects[oid];
-                removeObject(o);
+                RemoveObject(o);
             }
         }
 
-        public void processMessage(string message)
+        public void ProcessMessage(string message)
         {
             JSONObject o = new JSONObject(message);
             if (o.HasField("status"))
@@ -45,7 +45,7 @@ namespace Augmenta
                 {
                     if (o.HasField("setup"))
                     {
-                        setupWorld(o["setup"]);
+                        SetupWorld(o["setup"]);
                     }
                 }
             }
@@ -53,16 +53,16 @@ namespace Augmenta
             {
                 var data = o["update"];
                 var address = o["update"]["address"].str;
-                var container = getContainerForAddress(address);
-                if (container != null) container.handleUpdate(data);
+                var container = GetContainerForAddress(address);
+                if (container != null) container.HandleUpdate(data);
             }
         }
 
-        internal virtual void setupWorld(JSONObject data)
+        internal virtual void SetupWorld(JSONObject data)
         {
             if (worldContainer != null)
             {
-                worldContainer.clear();
+                worldContainer.Clear();
             }
 
             addressContainerMap.Clear();
@@ -72,11 +72,11 @@ namespace Augmenta
                 return;
             }
 
-            worldContainer = createContainer(data[0]);
+            worldContainer = CreateContainer(data[0]);
 
         }
 
-        public virtual void processData(float time, byte[] bytes, int offset = 0, bool decompress = false)
+        public virtual void ProcessData(float time, byte[] bytes, int offset = 0, bool decompress = false)
         {
             if (decompress) bytes = Utils.DecompressData(bytes);
             ReadOnlySpan<byte> data = bytes;
@@ -94,7 +94,7 @@ namespace Augmenta
                 while (pos < data.Length - 4)
                 {
                     var pSize = Utils.ReadInt(data, pos);
-                    processData(time, bytes, pos);
+                    ProcessData(time, bytes, pos);
                     pos += pSize;
                 }
             }
@@ -105,45 +105,45 @@ namespace Augmenta
             {
                 case 0: //Object
                     {
-                        processObject(time, data, packetDataPos);
+                        ProcessObject(time, data, packetDataPos);
                     }
                     break;
 
                 case 1: //Zone
                     {
-                        processZone(time, data, packetDataPos);
+                        ProcessZone(time, data, packetDataPos);
                     }
                     break;
 
                 case 2:
                     {
-                        processScene(time, data, packetDataPos);
+                        ProcessScene(time, data, packetDataPos);
                     }
                     break;
             }
         }
 
-        private void processObject(float time, ReadOnlySpan<byte> data, int offset)
+        private void ProcessObject(float time, ReadOnlySpan<byte> data, int offset)
         {
             var objectID = Utils.ReadInt(data, offset);
 
             BaseObject o = null;
             if (objects.ContainsKey(objectID)) o = objects[objectID];
-            if (o == null) o = addObject(objectID);
+            if (o == null) o = AddObject(objectID);
 
-            processObjectInternal(o);
+            ProcessObjectInternal(o);
 
-            o.updateData(time, data, offset);
+            o.UpdateData(time, data, offset);
         }
-        virtual protected void processObjectInternal(BaseObject o) { }
+        virtual protected void ProcessObjectInternal(BaseObject o) { }
 
-        void processZone(float time, ReadOnlySpan<byte> data, int offset)
+        void ProcessZone(float time, ReadOnlySpan<byte> data, int offset)
         {
-            processZoneInternal(time, data, offset);
+            ProcessZoneInternal(time, data, offset);
         }
 
-        virtual protected void processZoneInternal(float time, ReadOnlySpan<byte> data, int offset) { }
-        void processScene(float time, ReadOnlySpan<byte> data, int offset)
+        virtual protected void ProcessZoneInternal(float time, ReadOnlySpan<byte> data, int offset) { }
+        void ProcessScene(float time, ReadOnlySpan<byte> data, int offset)
         {
             var sceneIDSize = Utils.ReadInt(data, offset);
             var sceneID = Utils.ReadString(data, offset + 4, sceneIDSize);
@@ -155,60 +155,60 @@ namespace Augmenta
             else
             {
                 if (worldContainer == null) return;
-                workingScene = getContainerForAddress(sceneID);
+                workingScene = GetContainerForAddress(sceneID);
 
             }
         }
 
-        protected abstract BaseObject createObject();
-        internal abstract BaseContainer createContainer(JSONObject data);
+        protected abstract BaseObject CreateObject();
+        internal abstract BaseContainer CreateContainer(JSONObject data);
 
-        public virtual void registerContainer(BaseContainer c)
+        public virtual void RegisterContainer(BaseContainer c)
         {
             if (addressContainerMap == null) addressContainerMap = new Dictionary<string, BaseContainer>();
             addressContainerMap.Add(c.address, c);
         }
 
-        public virtual void unregisterContainer(BaseContainer c)
+        public virtual void UnregisterContainer(BaseContainer c)
         {
             addressContainerMap.Remove(c.address);
         }
 
-        public BaseContainer getContainerForAddress(string address)
+        public BaseContainer GetContainerForAddress(string address)
         {
             if (!addressContainerMap.ContainsKey(address)) return null;
             return addressContainerMap[address];
         }
 
-        protected void onObjectRemove(BaseObject o)
+        protected void OnObjectRemove(BaseObject o)
         {
-            removeObject(o);
+            RemoveObject(o);
         }
 
-        protected virtual BaseObject addObject(int objectID)
+        protected virtual BaseObject AddObject(int objectID)
         {
-            var o = createObject();
+            var o = CreateObject();
             o.objectID = objectID;
-            o.onRemove += onObjectRemove;
+            o.onRemove += OnObjectRemove;
             objects.Add(objectID, o);
             return o;
         }
 
-        protected virtual void removeObject(BaseObject o)
+        protected virtual void RemoveObject(BaseObject o)
         {
             objects.Remove(o.objectID);
-            o.kill();
+            o.Kill();
         }
 
-        virtual public void clear()
+        virtual public void Clear()
         {
             foreach (var o in objects.Values)
-                o.kill(true);
+                o.Kill(true);
             objects.Clear();
 
             if (worldContainer != null)
             {
-                worldContainer.clear();
+                worldContainer.Clear();
                 worldContainer = null;
             }
             addressContainerMap.Clear();
@@ -219,12 +219,12 @@ namespace Augmenta
         public Client() : base()
         {
         }
-        protected override BaseObject createObject()
+        protected override BaseObject CreateObject()
         {
             return new ObjectT();
         }
 
-        internal override BaseContainer createContainer(JSONObject data)
+        internal override BaseContainer CreateContainer(JSONObject data)
         {
             var container = new Container<TVector3>(this, data, null);
             OnContainerCreated(ref container);
@@ -235,29 +235,29 @@ namespace Augmenta
         {
         }
 
-        protected override BaseObject addObject(int objectID)
+        protected override BaseObject AddObject(int objectID)
         {
-            var o = base.addObject(objectID);
-            addObjectInternal(o as ObjectT);
+            var o = base.AddObject(objectID);
+            AddObjectInternal(o as ObjectT);
             return o;
         }
-        protected virtual void addObjectInternal(ObjectT o) { }
+        protected virtual void AddObjectInternal(ObjectT o) { }
 
-        protected override void removeObject(BaseObject o)
+        protected override void RemoveObject(BaseObject o)
         {
-            removeObjectInternal(o as ObjectT);
-            base.removeObject(o);
+            RemoveObjectInternal(o as ObjectT);
+            base.RemoveObject(o);
         }
-        protected virtual void removeObjectInternal(ObjectT o) { }
+        protected virtual void RemoveObjectInternal(ObjectT o) { }
 
-        protected override void processZoneInternal(float time, ReadOnlySpan<byte> data, int offset)
+        protected override void ProcessZoneInternal(float time, ReadOnlySpan<byte> data, int offset)
         {
             var zoneIDSize = Utils.ReadInt(data, offset);
             var zoneID = Utils.ReadString(data, offset + 4, zoneIDSize);
 
-            Zone<TVector3> zone = getContainerForAddress(zoneID) as Zone<TVector3>;
+            Zone<TVector3> zone = GetContainerForAddress(zoneID) as Zone<TVector3>;
             if (zone == null) return;
-            zone.processData(time, data, offset + 4 + zoneIDSize);
+            zone.ProcessData(time, data, offset + 4 + zoneIDSize);
         }
 
         public string GetRegisterMessage(string clientName, ProtocolOptions options)

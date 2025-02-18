@@ -34,11 +34,11 @@ namespace Augmenta
             name = o["name"].str;
             address = isRoot ? "/" : o["address"].str;
 
-            if (!isRoot) client.registerContainer(this);
-            setup(o);
+            if (!isRoot) client.RegisterContainer(this);
+            Setup(o);
         }
 
-        protected void setup(JSONObject o)
+        protected void Setup(JSONObject o)
         {
 
             children = new List<BaseContainer>();
@@ -53,15 +53,15 @@ namespace Augmenta
                         switch (c["type"].str)
                         {
                             case "Zone":
-                                children.Add(createZone(c));
+                                children.Add(CreateZone(c));
                                 break;
 
                             case "Scene":
-                                children.Add(createScene(c));
+                                children.Add(CreateScene(c));
                                 break;
 
                             default:
-                                children.Add(createContainer(c));
+                                children.Add(CreateContainer(c));
                                 break;
                         }
                     }
@@ -69,28 +69,28 @@ namespace Augmenta
             }
         }
 
-        virtual public void clear()
+        virtual public void Clear()
         {
-            foreach (var c in children) c.clear();
+            foreach (var c in children) c.Clear();
             children.Clear();
             parent = null;
-            client.unregisterContainer(this);
+            client.UnregisterContainer(this);
         }
 
 
-        abstract protected BaseContainer createContainer(JSONObject o);
-        abstract protected BaseContainer createZone(JSONObject o);
-        abstract protected BaseContainer createScene(JSONObject o);
+        abstract protected BaseContainer CreateContainer(JSONObject o);
+        abstract protected BaseContainer CreateZone(JSONObject o);
+        abstract protected BaseContainer CreateScene(JSONObject o);
 
-        public void handleUpdate(JSONObject o)
+        public void HandleUpdate(JSONObject o)
         {
             foreach (var prop in o.keys)
             {
-                handleParamUpdateInternal(prop, o[prop]);
+                HandleParamUpdateInternal(prop, o[prop]);
             }
         }
 
-        virtual protected void handleParamUpdateInternal(string prop, JSONObject o) { }
+        virtual protected void HandleParamUpdateInternal(string prop, JSONObject o) { }
 
     }
 
@@ -112,29 +112,29 @@ namespace Augmenta
         }
 
 
-        protected override BaseContainer createContainer(JSONObject o)
+        protected override BaseContainer CreateContainer(JSONObject o)
         {
             return new Container<TVector3>(client, o, this);
         }
 
-        protected override BaseContainer createZone(JSONObject o)
+        protected override BaseContainer CreateZone(JSONObject o)
         {
             return new Zone<TVector3>(client, o, this);
         }
 
-        protected override BaseContainer createScene(JSONObject o)
+        protected override BaseContainer CreateScene(JSONObject o)
         {
             return new Scene<TVector3>(client, o, this);
         }
 
-        protected override void handleParamUpdateInternal(string prop, JSONObject data)
+        protected override void HandleParamUpdateInternal(string prop, JSONObject data)
         {
             if (prop == "position") position = Utils.GetVector<TVector3>(data);
             else if (prop == "rotation") rotation = Utils.GetVector<TVector3>(data);
             else if (prop == "color") color = Utils.GetColor(data);
         }
 
-        virtual protected void updateCloudPoint(ref TVector3 pointInArray, TVector3 point)
+        virtual protected void UpdateCloudPoint(ref TVector3 pointInArray, TVector3 point)
         {
             pointInArray = point; //no transformation by default
         }

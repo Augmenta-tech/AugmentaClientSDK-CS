@@ -12,9 +12,9 @@ namespace Augmenta
             size = Utils.GetVector<TVector3>(o["size"]);
         }
 
-        protected override void handleParamUpdateInternal(string prop, JSONObject data)
+        protected override void HandleParamUpdateInternal(string prop, JSONObject data)
         {
-            base.handleParamUpdateInternal(prop, data);
+            base.HandleParamUpdateInternal(prop, data);
             if (prop == "size") size = Utils.GetVector<TVector3>(data);
         }
     }

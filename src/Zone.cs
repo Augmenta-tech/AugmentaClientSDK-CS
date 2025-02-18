@@ -26,10 +26,10 @@ namespace Augmenta
 
         public Zone(BaseClient client, JSONObject o, Container<TVector3> parent) : base(client, o, parent, ContainerType.Zone)
         {
-            setupSliderAxis(o["localSliderAxis"]);
+            SetupSliderAxis(o["localSliderAxis"]);
         }
 
-        public virtual void processData(float time, ReadOnlySpan<byte> data, int offset)
+        public virtual void ProcessData(float time, ReadOnlySpan<byte> data, int offset)
         {
             byte numEntered = data[offset];
             if (numEntered > 0 && enterEvent != null) enterEvent.Invoke((int)numEntered);
@@ -63,7 +63,7 @@ namespace Augmenta
                         break;
 
                     case 2: //cloud, to be handled internally
-                        processCloudInternal(time, data, extraPos + 5);
+                        ProcessCloudInternal(time, data, extraPos + 5);
                         break;
 
                 }
@@ -72,14 +72,14 @@ namespace Augmenta
             }
         }
 
-        protected override void handleParamUpdateInternal(string prop, JSONObject data)
+        protected override void HandleParamUpdateInternal(string prop, JSONObject data)
         {
-            base.handleParamUpdateInternal(prop, data);
-            if (prop == "localSliderAxis") setupSliderAxis(data);
+            base.HandleParamUpdateInternal(prop, data);
+            if (prop == "localSliderAxis") SetupSliderAxis(data);
         }
 
 
-        protected virtual void processCloudInternal(float time, ReadOnlySpan<byte> data, int offset)
+        protected virtual void ProcessCloudInternal(float time, ReadOnlySpan<byte> data, int offset)
         {
             //to be implemented by derived classes
             pointCount = Utils.ReadInt(data, offset);
@@ -90,12 +90,12 @@ namespace Augmenta
                 pointsA = new TVector3[(int)(pointCount * 1.5)];
 
             for (int i = 0; i < vectors.Length; i++)
-                updateCloudPoint(ref pointsA[i], vectors[i]);
+                UpdateCloudPoint(ref pointsA[i], vectors[i]);
 
         }
 
 
-        private void setupSliderAxis(JSONObject data)
+        private void SetupSliderAxis(JSONObject data)
         {
             string axisStr = data.str;
             if (axisStr == "x") sliderAxis = 0;

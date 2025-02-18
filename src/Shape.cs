@@ -12,33 +12,33 @@ namespace Augmenta
         
         public ShapeContainer(BaseClient client, JSONObject o, Container<TVector3> parent, ContainerType type) : base(client, o, parent, type)
         {
-            setupShape(o["shape"]);
+            SetupShape(o["shape"]);
         }
 
-        protected override void handleParamUpdateInternal(string prop, JSONObject data)
+        protected override void HandleParamUpdateInternal(string prop, JSONObject data)
         {
-            base.handleParamUpdateInternal(prop, data);
-            if (prop == "shape") setupShape(data);
+            base.HandleParamUpdateInternal(prop, data);
+            if (prop == "shape") SetupShape(data);
             else if (prop == "shapeParam")
             {
                 if (shape != null)
                 {
                     foreach (var p in data.keys)
                     {
-                        shape.handleParamUpdate(p, data[p]);
+                        shape.HandleParamUpdate(p, data[p]);
                     }
                 }
             }
         }
 
-        void setupShape(JSONObject o)
+        void SetupShape(JSONObject o)
         {
             if (o == null)
                 return;
 
-            if (shape != null && shape.isType(o["type"].str))
+            if (shape != null && shape.IsType(o["type"].str))
             {
-                foreach (var prop in o.keys) shape.handleParamUpdate(prop, o[prop]);
+                foreach (var prop in o.keys) shape.HandleParamUpdate(prop, o[prop]);
                 return;
             }
 
@@ -82,11 +82,11 @@ namespace Augmenta
             shapeType = st;
         }
 
-        public bool isType(string type)
+        public bool IsType(string type)
         {
             return ShapeTypeIds[(int)shapeType] == type;
         }
-        virtual public void handleParamUpdate(string prop, JSONObject data) { }
+        virtual public void HandleParamUpdate(string prop, JSONObject data) { }
     }
 
     public class SphereShape<TVector3> : Shape<TVector3> where TVector3 : struct
@@ -98,9 +98,9 @@ namespace Augmenta
             radius = o["radius"].f;
         }
 
-        public override void handleParamUpdate(string prop, JSONObject data)
+        public override void HandleParamUpdate(string prop, JSONObject data)
         {
-            base.handleParamUpdate(prop, data);
+            base.HandleParamUpdate(prop, data);
             if (prop == "radius") radius = data.f;
         }
 
@@ -114,9 +114,9 @@ namespace Augmenta
             size = Utils.GetVector<TVector3>(o["boxSize"]);
         }
 
-        public override void handleParamUpdate(string prop, JSONObject data)
+        public override void HandleParamUpdate(string prop, JSONObject data)
         {
-            base.handleParamUpdate(prop, data);
+            base.HandleParamUpdate(prop, data);
             if (prop == "boxSize") size = Utils.GetVector<TVector3>(data);
         }
     }
@@ -131,9 +131,9 @@ namespace Augmenta
             height = o["height"].f;
         }
 
-        public override void handleParamUpdate(string prop, JSONObject data)
+        public override void HandleParamUpdate(string prop, JSONObject data)
         {
-            base.handleParamUpdate(prop, data);
+            base.HandleParamUpdate(prop, data);
             if (prop == "radius") radius = data.f;
             else if (prop == "height") height = data.f;
         }
@@ -150,9 +150,9 @@ namespace Augmenta
             height = o["height"].f;
         }
 
-        public override void handleParamUpdate(string prop, JSONObject data)
+        public override void HandleParamUpdate(string prop, JSONObject data)
         {
-            base.handleParamUpdate(prop, data);
+            base.HandleParamUpdate(prop, data);
             if (prop == "radius") radius = data.f;
             else if (prop == "height") height = data.f;
         }
@@ -169,9 +169,9 @@ namespace Augmenta
                 points.Add(Utils.GetVector<TVector3>(p[i]));
         }
 
-        public override void handleParamUpdate(string prop, JSONObject data)
+        public override void HandleParamUpdate(string prop, JSONObject data)
         {
-            base.handleParamUpdate(prop, data);
+            base.HandleParamUpdate(prop, data);
             if (prop == "points")
             {
                 points.Clear();

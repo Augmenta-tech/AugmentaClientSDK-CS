@@ -27,7 +27,7 @@ namespace Augmenta
         public delegate void OnRemoveEvent(BaseObject obj);
         public event OnRemoveEvent onRemove;
 
-        public void update(float time)
+        public void Update(float time)
         {
             if (time - lastUpdateTime > .5f)
                 timeSinceGhost = time;
@@ -35,12 +35,12 @@ namespace Augmenta
                 timeSinceGhost = -1;
         }
 
-        virtual public void updateData(float time, ReadOnlySpan<byte> data, int offset)
+        virtual public void UpdateData(float time, ReadOnlySpan<byte> data, int offset)
         {
             lastUpdateTime = time;
         }
 
-        virtual protected void updateClusterData(ReadOnlySpan<byte> data, int offset)
+        virtual protected void UpdateClusterData(ReadOnlySpan<byte> data, int offset)
         {
             {
                 state = (State)Utils.ReadInt(data, offset);
@@ -52,8 +52,8 @@ namespace Augmenta
             }
         }
 
-        virtual public void kill(bool immediate = false) { }
-        virtual public void clear()
+        virtual public void Kill(bool immediate = false) { }
+        virtual public void Clear()
         {
             state = State.Ghost;
         }
@@ -73,7 +73,7 @@ namespace Augmenta
         public TVector3 rotation;
 
         // Update is called once per frame
-        public override void updateData(float time, ReadOnlySpan<byte> data, int offset)
+        public override void UpdateData(float time, ReadOnlySpan<byte> data, int offset)
         {
 
             var propertiesCount = Utils.ReadInt(data, offset + 4); //first data is ID (4 bytes)
@@ -92,20 +92,20 @@ namespace Augmenta
 
                 switch (propertyID)
                 {
-                    case 0: updatePointsData(data, propertyDataPos); break;
+                    case 0: UpdatePointsData(data, propertyDataPos); break;
                     case 1:
                         isCluster = true;
-                        updateClusterData(data, propertyDataPos); 
+                        UpdateClusterData(data, propertyDataPos); 
                         break;
                 }
 
                 pos += propertySize;
             }
 
-            base.updateData(time, data, offset);
+            base.UpdateData(time, data, offset);
         }
 
-        void updatePointsData(ReadOnlySpan<byte> data, int offset)
+        void UpdatePointsData(ReadOnlySpan<byte> data, int offset)
         {
             pointCount = Utils.ReadInt(data, offset);
             var vectors = Utils.ReadVectors<TVector3>(data, offset + sizeof(int), pointCount * 12);
@@ -125,9 +125,9 @@ namespace Augmenta
             //}
         }
 
-        override protected void updateClusterData(ReadOnlySpan<byte> data, int offset)
+        override protected void UpdateClusterData(ReadOnlySpan<byte> data, int offset)
         {
-            base.updateClusterData(data, offset);
+            base.UpdateClusterData(data, offset);
 
             const int numProperties = 4;
             var clusterData = new TVector3[numProperties];
@@ -153,12 +153,12 @@ namespace Augmenta
 
             rotation = ReadVector(data, weightDataIndex + 4);
 
-            updateTransform();
+            UpdateTransform();
         }
 
-        public override void clear()
+        public override void Clear()
         {
-            base.clear();
+            base.Clear();
             pointCount = 0;
             pointsA = new TVector3[0];
 
@@ -166,7 +166,7 @@ namespace Augmenta
             velocity = default;
         }
 
-        abstract protected void updateTransform();
+        abstract protected void UpdateTransform();
 
         virtual protected TVector3 ReadVector(ReadOnlySpan<byte> data, int offset)
         {
