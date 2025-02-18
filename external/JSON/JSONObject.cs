@@ -1,6 +1,6 @@
-#define PRETTY		//Comment out when you no longer need to read JSON to disable pretty Print system-wide
+#define PRETTY      //Comment out when you no longer need to read JSON to disable pretty Print system-wide                                                                                            
 //Using doubles will cause errors in VectorTemplates.cs; Unity speaks floats
-#define USEFLOAT	//Use floats for numbers instead of doubles	(enable if you're getting too many significant digits in string output)
+#define USEFLOAT    //Use floats for numbers instead of doubles	(enable if you're getting too many significant digits in string output)                                                                                                                       
 //#define POOLING	//Currently using a build setting for this one (also it's experimental)
 
 #if UNITY_2 || UNITY_3 || UNITY_4 || UNITY_5
@@ -35,16 +35,15 @@ THE SOFTWARE.
 */
 namespace Augmenta
 {
-
-	internal class JSONObject
+    public class JSONObject
 	{
 #if POOLING
 	const int MAX_POOL_SIZE = 10000;
 	public static Queue<JSONObject> releaseQueue = new Queue<JSONObject>();
 #endif
 
-        
-        
+
+
 		const int MAX_DEPTH = 100;
 		const string INFINITY = "\"INFINITY\"";
 		const string NEGINFINITY = "\"NEGINFINITY\"";
@@ -308,8 +307,8 @@ namespace Augmenta
 		}
 		void Parse(string str, int maxDepth = -2, bool storeExcessLevels = false, bool strict = false)
 		{
-            System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
-            
+			System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+
 			if (!string.IsNullOrEmpty(str))
 			{
 				str = str.Trim(WHITESPACE);
@@ -1118,7 +1117,7 @@ namespace Augmenta
 					builder.Append(NaN);
 #endif
 						else
-                        {
+						{
 							NumberFormatInfo nfi = new NumberFormatInfo();
 							nfi.NumberDecimalSeparator = ".";
 							builder.Append(n.ToString(nfi));
