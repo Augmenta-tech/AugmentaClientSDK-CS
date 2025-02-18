@@ -35,6 +35,7 @@ THE SOFTWARE.
 */
 namespace Augmenta
 {
+	// TODO: Refactor to hide from clients
     public class JSONObject
 	{
 #if POOLING

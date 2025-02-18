@@ -58,7 +58,7 @@ namespace Augmenta
             }
         }
 
-        public virtual void setupWorld(JSONObject data)
+        internal virtual void setupWorld(JSONObject data)
         {
             if (worldContainer != null)
             {
@@ -161,7 +161,7 @@ namespace Augmenta
         }
 
         protected abstract BaseObject createObject();
-        protected abstract BaseContainer createContainer(JSONObject data);
+        internal abstract BaseContainer createContainer(JSONObject data);
 
         public virtual void registerContainer(BaseContainer c)
         {
@@ -224,15 +224,15 @@ namespace Augmenta
             return new ObjectT();
         }
 
-        protected override BaseContainer createContainer(JSONObject data)
-        {
-            return createContainerInternal(data);
-        }
-
-        protected virtual Container<TVector3> createContainerInternal(JSONObject data)
+        internal override BaseContainer createContainer(JSONObject data)
         {
             var container = new Container<TVector3>(this, data, null);
+            OnContainerCreated(ref container);
             return container;
+        }
+
+        protected virtual void OnContainerCreated(ref Container<TVector3> newContainer)
+        {
         }
 
         protected override BaseObject addObject(int objectID)
@@ -260,5 +260,60 @@ namespace Augmenta
             zone.processData(time, data, offset + 4 + zoneIDSize);
         }
 
+        public string GetRegisterMessage(string clientName, ProtocolOptions options)
+        {
+            JSONObject optionsJson = JSONObject.Create();
+            if (options.version == ProtocolVersion.Latest)
+            {
+                optionsJson.AddField("version", (int)options.version);
+            }
+            else if (options.version != ProtocolVersion.v1)
+            {
+                optionsJson.AddField("version", (int)options.version + 1);
+            }
+            optionsJson.AddField("downSample", options.downSample);
+            optionsJson.AddField("streamClouds", options.streamClouds);
+            optionsJson.AddField("streamClusters", options.streamClusters);
+            optionsJson.AddField("streamClusterPoints", options.streamClusterPoints);
+            optionsJson.AddField("streamZonePoints", options.streamZonePoints);
+            optionsJson.AddField("useCompression", options.useCompression);
+            optionsJson.AddField("usePolling", options.usePolling);
+            optionsJson.AddField("boxRotationMode", nameof(options.boxRotationMode));
+
+            JSONObject tagsJson = JSONObject.Create();
+            foreach (var tag in options.tags)
+            {
+                tagsJson.Add(tag);
+            }
+            optionsJson.AddField("tags", tagsJson);
+
+            JSONObject axisTransformJson = JSONObject.Create();
+            axisTransformJson.AddField("axis", nameof(options.axisTransform.axis));
+            axisTransformJson.AddField("origin", nameof(options.axisTransform.origin));
+            axisTransformJson.AddField("flipX", options.axisTransform.flipX);
+            axisTransformJson.AddField("flipY", options.axisTransform.flipY);
+            axisTransformJson.AddField("flipZ", options.axisTransform.flipZ);
+            axisTransformJson.AddField("coordinateSpace", nameof(options.axisTransform.coordinateSpace));
+            // TODO: OriginOffset
+            // TODO: customMatrix
+
+            optionsJson.AddField("axisTransform", axisTransformJson);
+
+            JSONObject registerJson = JSONObject.Create();
+            registerJson.AddField("name", clientName);
+            registerJson.AddField("options", optionsJson);
+
+            JSONObject dataJson = JSONObject.Create();
+            dataJson.AddField("register", registerJson);
+
+            return dataJson.ToString();
+        }
+
+        public string GetPollMessage()
+        {
+            JSONObject pollJson = JSONObject.Create();
+            pollJson.AddField("poll", true);
+            return pollJson.ToString();
+        }
     }
 }
