@@ -4,13 +4,18 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <RootNamespace>Augmenta</RootNamespace>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Title>Augmenta Client SDK C#</Title>
+    <Title>Augmenta Client C# SDK</Title>
     <Authors>augmenta</Authors>
     <Company>Augmenta</Company>
     <PackageId>augmenta.client.sdk</PackageId>
     <Description>Contains everything you need to build your own client for the Augmenta tracking system for interactive experiences.</Description>
     <PackageIcon>augmenta_icon.png</PackageIcon>
     <PackageProjectUrl>https://augmenta.tech/</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/Augmenta-tech/Augmenta-Websocket-CS</RepositoryUrl>
+    <PackageTags>augmenta; interactive; sdk; audiovisual</PackageTags>
+    <NeutralLanguage>aa-ET</NeutralLanguage>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,6 +24,17 @@
 
   <ItemGroup>
     <None Include="resources\augmenta_icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Update="README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
