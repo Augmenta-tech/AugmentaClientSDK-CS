@@ -14,10 +14,10 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/Augmenta-tech/Augmenta-Websocket-CS</RepositoryUrl>
     <PackageTags>augmenta; interactive; sdk; audiovisual</PackageTags>
-    <NeutralLanguage>aa-ET</NeutralLanguage>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <AssemblyVersion>2.0.0.1</AssemblyVersion>
-    <FileVersion>2.0.0.1</FileVersion>
+    <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
+    <FileVersion>$(PackageVersion)</FileVersion>
+    <Version>2.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
