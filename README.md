@@ -16,7 +16,7 @@ You can alternatively add this repository as a submodule into your project direc
 - Use its method to parse incoming websocket messages.
 - Use the received data to update whatever you need for your use-case.
 
-For a full example usage, see the [Augmenta Unity Websocket Package](https://github.com/Augmenta-tech/AugmentaUnityWebsocket).
+For a full example usage, see the [Augmenta Websocket Client Unity Package](https://github.com/Augmenta-tech/AugmentaUnityWebsocket/tree/split-sdk) (the most up to date version is on the `split-sdk` branch while Augmenta 1.5 is in beta).
 
 ## Dependencies
 - [JSONObject](https://github.com/mtschoen/JSONObject/tree/master)
