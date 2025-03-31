@@ -12,6 +12,7 @@ namespace Augmenta
         protected BaseContainer workingScene; //the scene provided in the bundle data on receive
 
         protected Dictionary<string, BaseContainer> addressContainerMap;
+        public ProtocolOptions options;
 
         public BaseClient()
         {
@@ -36,6 +37,9 @@ namespace Augmenta
             }
         }
 
+        /// <summary>
+        /// Process a string message received from the server through the text/control channel
+        /// </summary>
         public void ProcessMessage(string message)
         {
             JSONObject o = new JSONObject(message);
@@ -76,25 +80,44 @@ namespace Augmenta
 
         }
 
-        public virtual void ProcessData(float time, byte[] bytes, int offset = 0, bool decompress = false)
+        /// <summary>
+        /// Process a data blob received through the data channel of a websocket connection,
+        /// updating the data structure as needed.
+        /// </summary>
+        public void ProcessData(float time, ReadOnlySpan<byte> dataBuffer)
         {
-            if (decompress) bytes = Utils.DecompressData(bytes);
-            ReadOnlySpan<byte> data = bytes;
+            ReadOnlySpan<byte> packet;
 
-            var packetSize = Utils.ReadInt(data, offset);
-            var type = data[offset + 4];
+            byte[] decompressedBuffer;
+            if (options.useCompression)
+            {
+                decompressedBuffer = Utils.DecompressData(dataBuffer);
+                packet = decompressedBuffer;
+            }
+            else
+            {
+                packet = dataBuffer;
+            }
+
+            ProcessPacket(time, packet, 0);
+        }
+
+        private void ProcessPacket(float time, ReadOnlySpan<byte> packet, int offset)
+        {
+            var packetSize = Utils.ReadInt(packet, offset);
+            var type = packet[offset + 4];
 
             if (type == 255) //bundle
             {
                 workingScene = null;
 
-                var packetCount = Utils.ReadInt(data, offset + 5);
+                var packetCount = Utils.ReadInt(packet, offset + 5);
                 var pos = offset + 9; //start of child packets
 
-                while (pos < data.Length - 4)
+                while (pos < packet.Length - 4)
                 {
-                    var pSize = Utils.ReadInt(data, pos);
-                    ProcessData(time, bytes, pos);
+                    var pSize = Utils.ReadInt(packet, pos);
+                    ProcessPacket(time, packet, pos);
                     pos += pSize;
                 }
             }
@@ -105,19 +128,19 @@ namespace Augmenta
             {
                 case 0: //Object
                     {
-                        ProcessObject(time, data, packetDataPos);
+                        ProcessObject(time, packet, packetDataPos);
                     }
                     break;
 
                 case 1: //Zone
                     {
-                        ProcessZone(time, data, packetDataPos);
+                        ProcessZone(time, packet, packetDataPos);
                     }
                     break;
 
                 case 2:
                     {
-                        ProcessScene(time, data, packetDataPos);
+                        ProcessScene(time, packet, packetDataPos);
                     }
                     break;
             }
@@ -135,15 +158,17 @@ namespace Augmenta
 
             o.UpdateData(time, data, offset);
         }
+
         virtual protected void ProcessObjectInternal(BaseObject o) { }
 
-        void ProcessZone(float time, ReadOnlySpan<byte> data, int offset)
+        private void ProcessZone(float time, ReadOnlySpan<byte> data, int offset)
         {
             ProcessZoneInternal(time, data, offset);
         }
 
         virtual protected void ProcessZoneInternal(float time, ReadOnlySpan<byte> data, int offset) { }
-        void ProcessScene(float time, ReadOnlySpan<byte> data, int offset)
+        
+        private void ProcessScene(float time, ReadOnlySpan<byte> data, int offset)
         {
             var sceneIDSize = Utils.ReadInt(data, offset);
             var sceneID = Utils.ReadString(data, offset + 4, sceneIDSize);
@@ -260,7 +285,11 @@ namespace Augmenta
             zone.ProcessData(time, data, offset + 4 + zoneIDSize);
         }
 
-        public string GetRegisterMessage(string clientName, ProtocolOptions options)
+        /// <summary>
+        /// Generate a Register message according to current options and settings and returns it as a JSON string,
+        ///  ready to be sent to the server. 
+        /// </summary>
+        public string GetRegisterMessage(string clientName)
         {
             JSONObject optionsJson = JSONObject.Create();
             if (options.version == ProtocolVersion.Latest)
@@ -323,6 +352,12 @@ namespace Augmenta
                     break;
                 case AxisTransform.OriginMode.BottomRight:
                     axisTransformJson.AddField("origin", "bottom_right");
+                    break;
+                case AxisTransform.OriginMode.TopLeft:
+                    axisTransformJson.AddField("origin", "top_left");
+                    break;
+                case AxisTransform.OriginMode.TopRight:
+                    axisTransformJson.AddField("origin", "top_right");
                     break;
             }
 
