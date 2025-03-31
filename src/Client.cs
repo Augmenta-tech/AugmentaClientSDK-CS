@@ -18,7 +18,7 @@ namespace Augmenta
         {
             addressContainerMap = new Dictionary<string, BaseContainer>();
         }
-
+        
         //Call once per frame
         virtual public void Update(float time)
         {
@@ -77,7 +77,6 @@ namespace Augmenta
             }
 
             worldContainer = CreateContainer(data[0]);
-
         }
 
         /// <summary>
@@ -181,11 +180,11 @@ namespace Augmenta
             {
                 if (worldContainer == null) return;
                 workingScene = GetContainerForAddress(sceneID);
-
             }
         }
 
         protected abstract BaseObject CreateObject();
+        
         internal abstract BaseContainer CreateContainer(JSONObject data);
 
         public virtual void RegisterContainer(BaseContainer c)
@@ -244,6 +243,7 @@ namespace Augmenta
         public Client() : base()
         {
         }
+
         protected override BaseObject CreateObject()
         {
             return new ObjectT();
@@ -266,6 +266,7 @@ namespace Augmenta
             AddObjectInternal(o as ObjectT);
             return o;
         }
+
         protected virtual void AddObjectInternal(ObjectT o) { }
 
         protected override void RemoveObject(BaseObject o)
@@ -273,6 +274,7 @@ namespace Augmenta
             RemoveObjectInternal(o as ObjectT);
             base.RemoveObject(o);
         }
+        
         protected virtual void RemoveObjectInternal(ObjectT o) { }
 
         protected override void ProcessZoneInternal(float time, ReadOnlySpan<byte> data, int offset)
@@ -376,7 +378,6 @@ namespace Augmenta
                 case AxisTransform.CoordinateSpace.Normalized:
                     axisTransformJson.AddField("coordinateSpace", "normalized");
                     break;
-
             }
 
             // TODO: OriginOffset

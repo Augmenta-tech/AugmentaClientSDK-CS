@@ -1,8 +1,4 @@
 using System;
-using System.Drawing;
-using System.Numerics;
-using System.Runtime.InteropServices;
-using static Augmenta.BaseObject;
 
 namespace Augmenta
 {
@@ -33,7 +29,6 @@ namespace Augmenta
         private TVector3[] pointsA = new TVector3[0];
         private int pointCount;
         public ArraySegment<TVector3> points => new ArraySegment<TVector3>(pointsA, 0, pointCount);
-
 
         public Zone(BaseClient client, JSONObject o, Container<TVector3> parent) : base(client, o, parent, ContainerType.Zone)
         {
@@ -88,14 +83,11 @@ namespace Augmenta
                 extraPos += extraSize;
             }
         }
-
         protected override void HandleParamUpdateInternal(string prop, JSONObject data)
         {
             base.HandleParamUpdateInternal(prop, data);
             if (prop == "localSliderAxis") SetupSliderAxis(data);
         }
-
-
         protected virtual void ProcessCloudInternal(float time, ReadOnlySpan<byte> data, int offset)
         {
             //to be implemented by derived classes
@@ -108,10 +100,7 @@ namespace Augmenta
 
             for (int i = 0; i < vectors.Length; i++)
                 UpdateCloudPoint(ref pointsA[i], vectors[i]);
-
         }
-
-
         private void SetupSliderAxis(JSONObject data)
         {
             string axisStr = data.str;
