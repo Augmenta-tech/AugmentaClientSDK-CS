@@ -38,7 +38,7 @@ namespace Augmenta
             return Color.FromArgb((int)(v[3].f * 255), (int)(v[0].f * 255), (int)(v[1].f * 255), (int)(v[2].f * 255));
         }
 
-        internal static byte[] DecompressData(byte[] data)
+        internal static byte[] DecompressData(ReadOnlySpan<byte> data)
         {
             return new Decompressor().Unwrap(data);
         }
