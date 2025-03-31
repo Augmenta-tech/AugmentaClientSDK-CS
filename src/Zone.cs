@@ -6,6 +6,18 @@ using static Augmenta.BaseObject;
 
 namespace Augmenta
 {
+    public class ObjectsEnteredZoneArgs : EventArgs
+    {
+        public int NumObjects { get; }
+        public ObjectsEnteredZoneArgs(int numObjects) => NumObjects = numObjects;
+    }
+
+    public class ObjectsExitedZoneArgs : EventArgs
+    {
+        public int NumObjects { get; }
+        public ObjectsExitedZoneArgs(int numObjects) => NumObjects = numObjects;
+    }
+
     public class Zone<TVector3> : ShapeContainer<TVector3> where TVector3 : struct
     {
         public int sliderAxis = 0; // 0 = x, 1 = y, 2 = z
@@ -15,9 +27,8 @@ namespace Augmenta
         public float padX = 0;
         public float padY = 0;
 
-        public delegate void EnterExitEvent(int count);
-        public EnterExitEvent enterEvent;
-        public EnterExitEvent exitEvent;
+        public event EventHandler<ObjectsEnteredZoneArgs>? ObjectsEntered;
+        public event EventHandler<ObjectsExitedZoneArgs>? ObjectsExited;
 
         private TVector3[] pointsA = new TVector3[0];
         private int pointCount;
@@ -32,10 +43,16 @@ namespace Augmenta
         public virtual void ProcessData(float time, ReadOnlySpan<byte> data, int offset)
         {
             byte numEntered = data[offset];
-            if (numEntered > 0 && enterEvent != null) enterEvent.Invoke((int)numEntered);
+            if (numEntered > 0)
+            {
+                ObjectsEntered?.Invoke(this, new ObjectsEnteredZoneArgs(numEntered));
+            }
 
             byte numExited = data[offset + 1];
-            if (numExited > 0 && exitEvent != null) exitEvent.Invoke((int)numExited);
+            if (numExited > 0)
+            {
+                ObjectsExited?.Invoke(this, new ObjectsExitedZoneArgs(numExited));
+            }
 
             presence = Utils.ReadInt(data, offset + 2);
             density = Utils.ReadFloat(data, offset + 6);
