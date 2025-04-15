@@ -1,8 +1,4 @@
 using System.Collections.Generic;
-using System.Numerics;
-using System;
-using System.Reflection;
-using System.Diagnostics;
 using System.Drawing;
 
 namespace Augmenta
@@ -32,9 +28,9 @@ namespace Augmenta
 
             isRoot = this.parent == null;
             name = o["name"].str;
-            address = isRoot ? "/" : o["address"].str;
+            address = o["address"].str;
 
-            if (!isRoot) client.RegisterContainer(this);
+            client.RegisterContainer(this);
             Setup(o);
         }
 
@@ -92,6 +88,18 @@ namespace Augmenta
 
         virtual protected void HandleParamUpdateInternal(string prop, JSONObject o) { }
 
+        protected int GetChildIndex(string address)
+        {
+            for(int i = 0; i < children.Count; ++i)
+            {
+                var child = children[i];
+                if (child.address == address)
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
     }
 
     public class Container<TVector3> : BaseContainer where TVector3 : struct
@@ -132,6 +140,24 @@ namespace Augmenta
             if (prop == "position") position = Utils.GetVector<TVector3>(data);
             else if (prop == "rotation") rotation = Utils.GetVector<TVector3>(data);
             else if (prop == "color") color = Utils.GetColor(data);
+            else if (prop == "children")
+            {
+                for (int i = 0; i < data.Count; i++)
+                {
+                    var childData = data[i];
+                    var existingChildIdx = GetChildIndex(childData["address"].str);
+                    if (existingChildIdx >= 0)
+                    {
+                        var child = children[existingChildIdx];
+                        child.HandleUpdate(childData);
+                    }
+                    else
+                    {
+                        // TODO: Create a new child (for now hierarchy change do not trigger update messages)
+                    }
+                }
+                // TODO: Remove children that no longer exit
+            }
         }
 
         virtual protected void UpdateCloudPoint(ref TVector3 pointInArray, TVector3 point)

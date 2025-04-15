@@ -49,16 +49,23 @@ namespace Augmenta
                 {
                     if (o.HasField("setup"))
                     {
-                        SetupWorld(o["setup"]);
+                        var worldJson = o["setup"];
+                        SetupWorld(worldJson);
                     }
                 }
             }
             else if (o.HasField("update"))
             {
-                var data = o["update"];
-                var address = o["update"]["address"].str;
+                var updatedObject = o["update"][0];
+                var address = updatedObject["address"].str;
                 var container = GetContainerForAddress(address);
-                if (container != null) container.HandleUpdate(data);
+                if (container == null)
+                {
+                    Debug.WriteLine("Could not find container for address");
+                    return;
+                }
+                    
+                container.HandleUpdate(updatedObject);
             }
         }
 
