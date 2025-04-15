@@ -23,8 +23,10 @@ namespace Augmenta
         public float padX = 0;
         public float padY = 0;
 
+#nullable enable
         public event EventHandler<ObjectsEnteredZoneArgs>? ObjectsEntered;
         public event EventHandler<ObjectsExitedZoneArgs>? ObjectsExited;
+#nullable disable
 
         private TVector3[] pointsA = new TVector3[0];
         private int pointCount;
