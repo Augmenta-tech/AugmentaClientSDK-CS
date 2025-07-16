@@ -14,6 +14,13 @@ namespace Augmenta
         protected Dictionary<string, BaseContainer> addressContainerMap;
         public ProtocolOptions options;
 
+        //Augmenta Events
+        public delegate void OnObjectCreatedEvent(BaseObject obj);
+        public event OnObjectCreatedEvent onObjectCreated;
+
+        public delegate void OnObjectRemovedEvent(BaseObject obj);
+        public event OnObjectRemovedEvent onObjectRemoved;
+
         public BaseClient()
         {
             addressContainerMap = new Dictionary<string, BaseContainer>();
@@ -157,12 +164,20 @@ namespace Augmenta
             var objectID = Utils.ReadInt(data, offset);
 
             BaseObject o = null;
+            bool objectCreated = false;
+
             if (objects.ContainsKey(objectID)) o = objects[objectID];
-            if (o == null) o = AddObject(objectID);
+
+            if (o == null) { 
+                o = AddObject(objectID);
+                objectCreated = true;
+            }
 
             ProcessObjectInternal(o);
 
             o.UpdateData(time, data, offset);
+
+            if (objectCreated) onObjectCreated?.Invoke(o);
         }
 
         virtual protected void ProcessObjectInternal(BaseObject o) { }
@@ -228,6 +243,7 @@ namespace Augmenta
         protected virtual void RemoveObject(BaseObject o)
         {
             objects.Remove(o.objectID);
+            onObjectRemoved?.Invoke(o); //Send removed event before destroying the object to ensure the parameter is still a valid object
             o.Kill();
         }
 
