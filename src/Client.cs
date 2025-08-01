@@ -18,6 +18,9 @@ namespace Augmenta
         public delegate void OnObjectCreatedEvent(BaseObject obj);
         public event OnObjectCreatedEvent onObjectCreated;
 
+        public delegate void OnObjectUpdatedEvent(BaseObject obj);
+        public event OnObjectUpdatedEvent onObjectUpdated;
+
         public delegate void OnObjectRemovedEvent(BaseObject obj);
         public event OnObjectRemovedEvent onObjectRemoved;
 
@@ -177,7 +180,10 @@ namespace Augmenta
 
             o.UpdateData(time, data, offset);
 
-            if (objectCreated) onObjectCreated?.Invoke(o);
+            if (objectCreated) 
+                onObjectCreated?.Invoke(o);
+
+            onObjectUpdated?.Invoke(o);
         }
 
         virtual protected void ProcessObjectInternal(BaseObject o) { }
