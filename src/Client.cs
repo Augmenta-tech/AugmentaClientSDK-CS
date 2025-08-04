@@ -167,23 +167,16 @@ namespace Augmenta
             var objectID = Utils.ReadInt(data, offset);
 
             BaseObject o = null;
-            bool objectCreated = false;
 
             if (objects.ContainsKey(objectID)) o = objects[objectID];
 
             if (o == null) { 
                 o = AddObject(objectID);
-                objectCreated = true;
             }
 
             ProcessObjectInternal(o);
 
             o.UpdateData(time, data, offset);
-
-            if (objectCreated) 
-                onObjectCreated?.Invoke(o);
-
-            onObjectUpdated?.Invoke(o);
         }
 
         virtual protected void ProcessObjectInternal(BaseObject o) { }
@@ -232,6 +225,16 @@ namespace Augmenta
             return addressContainerMap[address];
         }
 
+        protected void OnObjectEnter(BaseObject o)
+        {
+            onObjectCreated?.Invoke(o);
+        }
+
+        protected void OnObjectUpdate(BaseObject o)
+        {
+            onObjectUpdated?.Invoke(o);
+        }
+
         protected void OnObjectRemove(BaseObject o)
         {
             RemoveObject(o);
@@ -241,6 +244,8 @@ namespace Augmenta
         {
             var o = CreateObject();
             o.objectID = objectID;
+            o.onEnter += OnObjectEnter;
+            o.onUpdate += OnObjectUpdate;
             o.onRemove += OnObjectRemove;
             objects.Add(objectID, o);
             return o;

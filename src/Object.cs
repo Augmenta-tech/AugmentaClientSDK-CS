@@ -24,6 +24,12 @@ namespace Augmenta
         public enum State { Enter = 0, Update = 1, Leave = 2, Ghost = 3 };
         public State state;
 
+        public delegate void OnEnterEvent(BaseObject obj);
+        public event OnEnterEvent onEnter;
+
+        public delegate void OnUpdateEvent(BaseObject obj);
+        public event OnUpdateEvent onUpdate;
+
         public delegate void OnRemoveEvent(BaseObject obj);
         public event OnRemoveEvent onRemove;
 
@@ -44,10 +50,19 @@ namespace Augmenta
         {
             {
                 state = (State)Utils.ReadInt(data, offset);
-                if (state == State.Leave) //Will leave
+                switch (state)
                 {
-                    onRemove?.Invoke(this);
-                    return;
+                    case State.Enter:
+                        onEnter?.Invoke(this);
+                        break;
+
+                     case State.Update: 
+                        onUpdate?.Invoke(this); 
+                        break;
+
+                     case State.Leave:
+                        onRemove?.Invoke(this);
+                        break;
                 }
             }
         }
