@@ -30,8 +30,8 @@ namespace Augmenta
         public delegate void OnUpdateEvent(BaseObject obj);
         public event OnUpdateEvent onUpdate;
 
-        public delegate void OnRemoveEvent(BaseObject obj);
-        public event OnRemoveEvent onRemove;
+        public delegate void OnLeaveEvent(BaseObject obj);
+        public event OnLeaveEvent onLeave;
 
         public void Update(float time)
         {
@@ -41,36 +41,32 @@ namespace Augmenta
                 timeSinceGhost = -1;
         }
 
-        virtual public void UpdateData(float time, ReadOnlySpan<byte> data, int offset)
+        virtual internal void UpdateData(float time, ReadOnlySpan<byte> data, int offset)
         {
             lastUpdateTime = time;
         }
 
-        virtual protected void UpdateClusterData(ReadOnlySpan<byte> data, int offset)
-        {
-            {
-                state = (State)Utils.ReadInt(data, offset);
-                switch (state)
-                {
-                    case State.Enter:
-                        onEnter?.Invoke(this);
-                        break;
-
-                     case State.Update: 
-                        onUpdate?.Invoke(this); 
-                        break;
-
-                     case State.Leave:
-                        onRemove?.Invoke(this);
-                        break;
-                }
-            }
-        }
+        protected abstract void UpdateClusterData(ReadOnlySpan<byte> data, int offset);
 
         virtual public void Kill(bool immediate = false) { }
         virtual public void Clear()
         {
             state = State.Ghost;
+        }
+
+        internal void NotifyEnter()
+        {
+            this.onEnter?.Invoke(this);
+        }
+
+        internal void NotifyLeave()
+        {
+            this.onLeave?.Invoke(this);
+        }
+
+        internal void NotifyUpdate()
+        {
+            this.onUpdate?.Invoke(this);
         }
     }
 
@@ -87,8 +83,7 @@ namespace Augmenta
         public TVector3 boxSize;
         public TVector3 rotation;
 
-        // Update is called once per frame
-        public override void UpdateData(float time, ReadOnlySpan<byte> data, int offset)
+        internal override void UpdateData(float time, ReadOnlySpan<byte> data, int offset)
         {
 
             var propertiesCount = Utils.ReadInt(data, offset + 4); //first data is ID (4 bytes)
@@ -107,10 +102,12 @@ namespace Augmenta
 
                 switch (propertyID)
                 {
-                    case 0: UpdatePointsData(data, propertyDataPos); break;
+                    case 0:
+                        UpdatePointsData(data, propertyDataPos);
+                        break;
                     case 1:
                         isCluster = true;
-                        UpdateClusterData(data, propertyDataPos); 
+                        UpdateClusterData(data, propertyDataPos);
                         break;
                 }
 
@@ -129,7 +126,7 @@ namespace Augmenta
                 pointsA = new TVector3[(int)(pointCount * 1.5)];
 
             vectors.CopyTo(pointsA.AsSpan());
-            
+
             //We're deciding to not use custom transformation here, final client will take care of this
             //if (pointMode == CoordMode.Absolute)
             //else
@@ -142,7 +139,7 @@ namespace Augmenta
 
         override protected void UpdateClusterData(ReadOnlySpan<byte> data, int offset)
         {
-            base.UpdateClusterData(data, offset);
+            state = (State)Utils.ReadInt(data, offset);
 
             const int numProperties = 4;
             var clusterData = new TVector3[numProperties];
@@ -187,6 +184,5 @@ namespace Augmenta
         {
             return MemoryMarshal.Cast<byte, TVector3>(data.Slice(offset))[0];
         }
-
     }
 }

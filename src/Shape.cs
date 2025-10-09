@@ -9,7 +9,7 @@ namespace Augmenta
     public class ShapeContainer<TVector3> : Container<TVector3> where TVector3 : struct
     {
         public Shape<TVector3> shape;
-        
+
         public ShapeContainer(BaseClient client, JSONObject o, Container<TVector3> parent, ContainerType type) : base(client, o, parent, type)
         {
             SetupShape(o["shape"]);
@@ -43,9 +43,6 @@ namespace Augmenta
             }
 
             shape = null;
-
-
-
             switch (o["type"].str)
             {
                 case "Sphere":

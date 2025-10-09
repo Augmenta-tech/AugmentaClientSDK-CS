@@ -17,8 +17,14 @@ namespace Augmenta
         public BaseContainer parent;
         public List<BaseContainer> children;
 
-        public object wrapperObject;
+        // TODO: Only relevent for scenes
+        public List<BaseObject> objects = new(); // Objects part of this container. 
+        
+        public delegate void OnObjectEnteredEvent(BaseObject obj);
+        public event OnObjectEnteredEvent onObjectEntered;
 
+        public delegate void OnObjectExitedEvent(BaseObject obj);
+        public event OnObjectExitedEvent onObjectExited;
 
         public BaseContainer(BaseClient client, JSONObject o, BaseContainer parent, ContainerType type = ContainerType.Container)
         {
@@ -26,7 +32,7 @@ namespace Augmenta
             this.parent = parent;
             this.client = client;
 
-            isRoot = this.parent == null;
+            isRoot = (this.parent == null);
             name = o["name"].str;
             address = o["address"].str;
 
@@ -36,7 +42,6 @@ namespace Augmenta
 
         protected void Setup(JSONObject o)
         {
-
             children = new List<BaseContainer>();
 
             if (o.HasField("children"))
@@ -53,7 +58,8 @@ namespace Augmenta
                                 break;
 
                             case "Scene":
-                                children.Add(CreateScene(c));
+                                var scene = CreateScene(c);
+                                children.Add(scene);
                                 break;
 
                             default:
@@ -78,7 +84,7 @@ namespace Augmenta
         abstract protected BaseContainer CreateZone(JSONObject o);
         abstract protected BaseContainer CreateScene(JSONObject o);
 
-        public void HandleUpdate(JSONObject o)
+        internal virtual void HandleUpdate(JSONObject o)
         {
             foreach (var prop in o.keys)
             {
@@ -100,6 +106,18 @@ namespace Augmenta
             }
             return -1;
         }
+    
+        internal void AddObject(ref BaseObject objectToAdd)
+        {
+            this.objects.Add(objectToAdd);
+            this.onObjectEntered?.Invoke(objectToAdd);
+        }
+
+        internal void RemoveObject(ref BaseObject objectToRemove)
+        {
+            this.objects.Remove(objectToRemove);
+            this.onObjectExited?.Invoke(objectToRemove);
+        }
     }
 
     public class Container<TVector3> : BaseContainer where TVector3 : struct
@@ -107,6 +125,9 @@ namespace Augmenta
         public TVector3 position;
         public TVector3 rotation;
         public Color color;
+
+        public delegate void OnUpdateEvent(Container<TVector3> obj);
+        public event OnUpdateEvent onUpdate;
 
         public Container(BaseClient client = null, JSONObject o = null, BaseContainer parent = null, ContainerType type = ContainerType.Container) :
             base(client, o, parent, type)
@@ -133,6 +154,12 @@ namespace Augmenta
         protected override BaseContainer CreateScene(JSONObject o)
         {
             return new Scene<TVector3>(client, o, this);
+        }
+
+        internal override void HandleUpdate(JSONObject jsonObject)
+        {
+            base.HandleUpdate(jsonObject);
+            this.onUpdate?.Invoke(this);
         }
 
         protected override void HandleParamUpdateInternal(string prop, JSONObject data)

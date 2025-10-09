@@ -5,8 +5,13 @@ using System.Numerics;
 
 namespace Augmenta
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <todo> This "Base" class is useless, it should be merged with the derived templated one </todo>
     public abstract class BaseClient
     {
+        // Lookup map for all existing objects, regardless of their scene 
         public Dictionary<int, BaseObject> objects = new Dictionary<int, BaseObject>();
         public BaseContainer worldContainer;
         protected BaseContainer workingScene; //the scene provided in the bundle data on receive
@@ -14,21 +19,11 @@ namespace Augmenta
         protected Dictionary<string, BaseContainer> addressContainerMap;
         public ProtocolOptions options;
 
-        //Augmenta Events
-        public delegate void OnObjectCreatedEvent(BaseObject obj);
-        public event OnObjectCreatedEvent onObjectCreated;
-
-        public delegate void OnObjectUpdatedEvent(BaseObject obj);
-        public event OnObjectUpdatedEvent onObjectUpdated;
-
-        public delegate void OnObjectRemovedEvent(BaseObject obj);
-        public event OnObjectRemovedEvent onObjectRemoved;
-
         public BaseClient()
         {
             addressContainerMap = new Dictionary<string, BaseContainer>();
         }
-        
+
         //Call once per frame
         virtual public void Update(float time)
         {
@@ -36,6 +31,7 @@ namespace Augmenta
             foreach (var o in objects.Values)
             {
                 o.Update(time);
+                // TODO: Ghosting behavior is the server's responsibility !!
                 if (o.timeSinceGhost > 1)
                     objectsToRemove.Add(o.objectID);
             }
@@ -74,7 +70,7 @@ namespace Augmenta
                     Debug.WriteLine("Could not find container for address");
                     return;
                 }
-                    
+
                 container.HandleUpdate(updatedObject);
             }
         }
@@ -142,19 +138,19 @@ namespace Augmenta
 
             switch (type)
             {
-                case 0: //Object
+                case 0: // Object
                     {
                         ProcessObject(time, packet, packetDataPos);
                     }
                     break;
 
-                case 1: //Zone
+                case 1: // Zone
                     {
                         ProcessZone(time, packet, packetDataPos);
                     }
                     break;
 
-                case 2:
+                case 2: // Scene
                     {
                         ProcessScene(time, packet, packetDataPos);
                     }
@@ -166,19 +162,51 @@ namespace Augmenta
         {
             var objectID = Utils.ReadInt(data, offset);
 
-            BaseObject o = null;
-
-            if (objects.ContainsKey(objectID)) o = objects[objectID];
-
-            if (o == null) { 
-                o = AddObject(objectID);
-            }
+            bool objectAlreadyExists = objects.ContainsKey(objectID);
+            BaseObject o = objectAlreadyExists ? o = objects[objectID] : CreateObject();
 
             ProcessObjectInternal(o);
-
             o.UpdateData(time, data, offset);
+            
+            if (!objectAlreadyExists)
+            {
+                AddObject(o, objectID);
+                workingScene.AddObject(ref o);
+            }
+
+            if (o.isCluster)
+            {
+                switch (o.state)
+                {
+                    case BaseObject.State.Enter:
+                        o.NotifyEnter();
+                        break;
+
+                    case BaseObject.State.Update:
+                        if (!objectAlreadyExists)
+                        {
+                            o.NotifyEnter();
+                        }
+                        else
+                        {
+                            o.NotifyUpdate();
+                        }
+                        break;
+
+                    case BaseObject.State.Leave:
+                        o.NotifyLeave(); // TODO: Rename leave for consistency
+                        break;
+                }
+            }
+            else // Point Cloud
+            {
+                o.NotifyUpdate();
+            }
+
+
         }
 
+        // TODO: Not used, deprecate ?
         virtual protected void ProcessObjectInternal(BaseObject o) { }
 
         private void ProcessZone(float time, ReadOnlySpan<byte> data, int offset)
@@ -187,7 +215,7 @@ namespace Augmenta
         }
 
         virtual protected void ProcessZoneInternal(float time, ReadOnlySpan<byte> data, int offset) { }
-        
+
         private void ProcessScene(float time, ReadOnlySpan<byte> data, int offset)
         {
             var sceneIDSize = Utils.ReadInt(data, offset);
@@ -204,8 +232,6 @@ namespace Augmenta
             }
         }
 
-        protected abstract BaseObject CreateObject();
-        
         internal abstract BaseContainer CreateContainer(JSONObject data);
 
         public virtual void RegisterContainer(BaseContainer c)
@@ -225,36 +251,20 @@ namespace Augmenta
             return addressContainerMap[address];
         }
 
-        protected void OnObjectEnter(BaseObject o)
-        {
-            onObjectCreated?.Invoke(o);
-        }
+        protected abstract BaseObject CreateObject();
 
-        protected void OnObjectUpdate(BaseObject o)
+        protected virtual void AddObject(BaseObject newObject, int objectID)
         {
-            onObjectUpdated?.Invoke(o);
-        }
-
-        protected void OnObjectRemove(BaseObject o)
-        {
-            RemoveObject(o);
-        }
-
-        protected virtual BaseObject AddObject(int objectID)
-        {
-            var o = CreateObject();
-            o.objectID = objectID;
-            o.onEnter += OnObjectEnter;
-            o.onUpdate += OnObjectUpdate;
-            o.onRemove += OnObjectRemove;
-            objects.Add(objectID, o);
-            return o;
+            // TODO: Object ID should be set before
+            newObject.objectID = objectID;
+            objects.Add(objectID, newObject);
         }
 
         protected virtual void RemoveObject(BaseObject o)
         {
             objects.Remove(o.objectID);
-            onObjectRemoved?.Invoke(o); //Send removed event before destroying the object to ensure the parameter is still a valid object
+            // TODO: Remove should be pulled up to match AddObject behavior
+            workingScene.RemoveObject(ref o); //Send removed event before destroying the object to ensure the parameter is still a valid object
             o.Kill();
         }
 
@@ -272,8 +282,12 @@ namespace Augmenta
             addressContainerMap.Clear();
         }
     }
+    
     public class Client<ObjectT, TVector3> : BaseClient where ObjectT : BaseObject, new() where TVector3 : struct
     {
+        public delegate void OnSetupCompleted(Container<TVector3> world);
+        public event OnSetupCompleted onSetupCompleted;
+
         public Client() : base()
         {
         }
@@ -294,11 +308,10 @@ namespace Augmenta
         {
         }
 
-        protected override BaseObject AddObject(int objectID)
+        protected override void AddObject(BaseObject newObject, int objectID)
         {
-            var o = base.AddObject(objectID);
-            AddObjectInternal(o as ObjectT);
-            return o;
+            base.AddObject(newObject, objectID);
+            AddObjectInternal(newObject as ObjectT);
         }
 
         protected virtual void AddObjectInternal(ObjectT o) { }
@@ -308,7 +321,7 @@ namespace Augmenta
             RemoveObjectInternal(o as ObjectT);
             base.RemoveObject(o);
         }
-        
+
         protected virtual void RemoveObjectInternal(ObjectT o) { }
 
         protected override void ProcessZoneInternal(float time, ReadOnlySpan<byte> data, int offset)
@@ -344,7 +357,7 @@ namespace Augmenta
             optionsJson.AddField("useCompression", options.useCompression);
             optionsJson.AddField("usePolling", options.usePolling);
 
-            switch(options.boxRotationMode)
+            switch (options.boxRotationMode)
             {
                 case ProtocolOptions.RotationMode.Quaternions:
                     optionsJson.AddField("boxRotationMode", "quaternions");
@@ -365,7 +378,7 @@ namespace Augmenta
             optionsJson.AddField("tags", tagsJson);
 
             JSONObject axisTransformJson = JSONObject.Create();
-            switch(options.axisTransform.axis)
+            switch (options.axisTransform.axis)
             {
                 case AxisTransform.AxisMode.ZUpRightHanded:
                     axisTransformJson.AddField("axis", "z_up_right");
@@ -381,7 +394,7 @@ namespace Augmenta
                     break;
             }
 
-            switch(options.axisTransform.origin)
+            switch (options.axisTransform.origin)
             {
                 case AxisTransform.OriginMode.BottomLeft:
                     axisTransformJson.AddField("origin", "bottom_left");
@@ -401,7 +414,7 @@ namespace Augmenta
             axisTransformJson.AddField("flipY", options.axisTransform.flipY);
             axisTransformJson.AddField("flipZ", options.axisTransform.flipZ);
 
-            switch(options.axisTransform.coordinateSpace)
+            switch (options.axisTransform.coordinateSpace)
             {
                 case AxisTransform.CoordinateSpace.Absolute:
                     axisTransformJson.AddField("coordinateSpace", "absolute");
@@ -435,5 +448,12 @@ namespace Augmenta
             pollJson.AddField("poll", true);
             return pollJson.ToString();
         }
+
+        internal override void SetupWorld(JSONObject data)
+        {
+            base.SetupWorld(data);
+            onSetupCompleted?.Invoke(worldContainer as Container<TVector3>);
+        }
+
     }
 }
