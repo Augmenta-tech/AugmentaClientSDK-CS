@@ -8,15 +8,7 @@ namespace Augmenta
     public abstract class BaseObject
     {
         public int objectID;
-        public float lastUpdateTime;
-
-        public float killDelayTime = 0;
-        public float timeSinceGhost;
-        public bool drawDebug;
-
-        public float weight;
         public bool isCluster;
-
         internal bool updatedThisFrame = true;
 
         public enum PositionUpdateMode { None, Centroid, BoxCenter }
@@ -35,25 +27,9 @@ namespace Augmenta
         public delegate void OnLeaveEvent(BaseObject obj);
         public event OnLeaveEvent onLeave;
 
-        public void Update(float time)
-        {
-            if (time - lastUpdateTime > .5f)
-                timeSinceGhost = time;
-            else
-                timeSinceGhost = -1;
-        }
-
         virtual internal void UpdateData(float time, ReadOnlySpan<byte> data, int offset)
         {
             updatedThisFrame = true;
-            lastUpdateTime = time;
-        }
-
-        protected abstract void UpdateClusterData(ReadOnlySpan<byte> data, int offset);
-
-        virtual public void Clear()
-        {
-            state = State.Ghost;
         }
 
         internal void NotifyEnter()
@@ -84,6 +60,7 @@ namespace Augmenta
         public TVector3 boxCenter;
         public TVector3 boxSize;
         public TVector3 rotation;
+        public float weight;
 
         internal override void UpdateData(float time, ReadOnlySpan<byte> data, int offset)
         {
@@ -111,7 +88,7 @@ namespace Augmenta
             base.UpdateData(time, data, offset);
         }
 
-        void UpdatePointsData(ReadOnlySpan<byte> data, int offset)
+        private void UpdatePointsData(ReadOnlySpan<byte> data, int offset)
         {
             pointCount = Utils.ReadInt(data, offset);
             var vectors = Utils.ReadVectors<TVector3>(data, offset + sizeof(int), pointCount * 12);
@@ -121,18 +98,9 @@ namespace Augmenta
                 pointsA = new TVector3[(int)(pointCount * 1.5)];
 
             vectors.CopyTo(pointsA.AsSpan());
-
-            //We're deciding to not use custom transformation here, final client will take care of this
-            //if (pointMode == CoordMode.Absolute)
-            //else
-            //{
-            //    for (int i = 0; i < vectors.Length; i++)
-            //        updateCloudPoint(ref pointsA[i], vectors[i]);
-
-            //}
         }
 
-        override protected void UpdateClusterData(ReadOnlySpan<byte> data, int offset)
+        private void UpdateClusterData(ReadOnlySpan<byte> data, int offset)
         {
             state = (State) Utils.ReadInt(data, offset);
             offset += 4;
@@ -158,21 +126,7 @@ namespace Augmenta
 
             //lookAt = ReadVector(data, offset);
             //offset += 12;
-
-            UpdateTransform();
         }
-
-        public override void Clear()
-        {
-            base.Clear();
-            pointCount = 0;
-            pointsA = new TVector3[0];
-
-            centroid = default;
-            velocity = default;
-        }
-
-        abstract protected void UpdateTransform();
 
         virtual protected TVector3 ReadVector(ReadOnlySpan<byte> data, int offset)
         {
