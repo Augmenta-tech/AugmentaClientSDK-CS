@@ -17,6 +17,8 @@ namespace Augmenta
         public float weight;
         public bool isCluster;
 
+        internal bool updatedThisFrame = true;
+
         public enum PositionUpdateMode { None, Centroid, BoxCenter }
         public PositionUpdateMode posUpdateMode = PositionUpdateMode.Centroid;
         public enum CoordMode { Absolute, Relative }
@@ -43,12 +45,12 @@ namespace Augmenta
 
         virtual internal void UpdateData(float time, ReadOnlySpan<byte> data, int offset)
         {
+            updatedThisFrame = true;
             lastUpdateTime = time;
         }
 
         protected abstract void UpdateClusterData(ReadOnlySpan<byte> data, int offset);
 
-        virtual public void Kill(bool immediate = false) { }
         virtual public void Clear()
         {
             state = State.Ghost;

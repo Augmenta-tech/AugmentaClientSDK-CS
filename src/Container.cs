@@ -79,7 +79,6 @@ namespace Augmenta
             client.UnregisterContainer(this);
         }
 
-
         abstract protected BaseContainer CreateContainer(JSONObject o);
         abstract protected BaseContainer CreateZone(JSONObject o);
         abstract protected BaseContainer CreateScene(JSONObject o);
@@ -107,6 +106,11 @@ namespace Augmenta
             return -1;
         }
     
+        internal BaseObject GetObject(int objectID)
+        {
+            return this.objects.Find(o => o.objectID == objectID);
+        }
+
         internal void AddObject(ref BaseObject objectToAdd)
         {
             this.objects.Add(objectToAdd);

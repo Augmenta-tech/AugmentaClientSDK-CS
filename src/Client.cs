@@ -11,8 +11,6 @@ namespace Augmenta
     /// <todo> This "Base" class is useless, it should be merged with the derived templated one </todo>
     public abstract class BaseClient
     {
-        // Lookup map for all existing objects, regardless of their scene 
-        public Dictionary<int, BaseObject> objects = new Dictionary<int, BaseObject>();
         public BaseContainer worldContainer;
         protected BaseContainer workingScene; //the scene provided in the bundle data on receive
 
@@ -25,22 +23,9 @@ namespace Augmenta
         }
 
         //Call once per frame
+        [Obsolete("You no longer need to call update on the client each frame !", false)]
         virtual public void Update(float time)
         {
-            var objectsToRemove = new List<int>();
-            foreach (var o in objects.Values)
-            {
-                o.Update(time);
-                // TODO: Ghosting behavior is the server's responsibility !!
-                if (o.timeSinceGhost > 1)
-                    objectsToRemove.Add(o.objectID);
-            }
-
-            foreach (var oid in objectsToRemove)
-            {
-                var o = objects[oid];
-                RemoveObject(o);
-            }
         }
 
         /// <summary>
@@ -132,6 +117,10 @@ namespace Augmenta
                     ProcessPacket(time, packet, pos);
                     pos += pSize;
                 }
+
+                // Remove objects that were not updated this frame
+                // They should have been notified already
+                workingScene.objects.RemoveAll(obj => !obj.updatedThisFrame);
             }
 
             var packetDataPos = offset + 5;
@@ -153,6 +142,12 @@ namespace Augmenta
                 case 2: // Scene
                     {
                         ProcessScene(time, packet, packetDataPos);
+
+                        // We just started updating a scene, reset object update status
+                        foreach (var obj in workingScene.objects)
+                        {
+                            obj.updatedThisFrame = false;
+                        }
                     }
                     break;
             }
@@ -162,8 +157,13 @@ namespace Augmenta
         {
             var objectID = Utils.ReadInt(data, offset);
 
-            bool objectAlreadyExists = objects.ContainsKey(objectID);
-            BaseObject o = objectAlreadyExists ? o = objects[objectID] : CreateObject();
+            BaseObject o = workingScene.GetObject(objectID);
+            bool objectAlreadyExists = o != null;
+            if (!objectAlreadyExists)
+            {
+                o = CreateObject();
+                o.objectID = objectID;
+            }
 
             ProcessObjectInternal(o);
 
@@ -172,7 +172,6 @@ namespace Augmenta
             
             if (!objectAlreadyExists)
             {
-                AddObject(o, objectID);
                 workingScene.AddObject(ref o);
             }
 
@@ -204,8 +203,6 @@ namespace Augmenta
             {
                 o.NotifyUpdate();
             }
-
-
         }
 
         // TODO: Not used, deprecate ?
@@ -255,27 +252,8 @@ namespace Augmenta
 
         protected abstract BaseObject CreateObject();
 
-        protected virtual void AddObject(BaseObject newObject, int objectID)
-        {
-            // TODO: Object ID should be set before
-            newObject.objectID = objectID;
-            objects.Add(objectID, newObject);
-        }
-
-        protected virtual void RemoveObject(BaseObject o)
-        {
-            objects.Remove(o.objectID);
-            // TODO: Remove should be pulled up to match AddObject behavior
-            workingScene.RemoveObject(ref o); //Send removed event before destroying the object to ensure the parameter is still a valid object
-            o.Kill();
-        }
-
         virtual public void Clear()
         {
-            foreach (var o in objects.Values)
-                o.Kill(true);
-            objects.Clear();
-
             if (worldContainer != null)
             {
                 worldContainer.Clear();
@@ -309,22 +287,6 @@ namespace Augmenta
         protected virtual void OnContainerCreated(ref Container<TVector3> newContainer)
         {
         }
-
-        protected override void AddObject(BaseObject newObject, int objectID)
-        {
-            base.AddObject(newObject, objectID);
-            AddObjectInternal(newObject as ObjectT);
-        }
-
-        protected virtual void AddObjectInternal(ObjectT o) { }
-
-        protected override void RemoveObject(BaseObject o)
-        {
-            RemoveObjectInternal(o as ObjectT);
-            base.RemoveObject(o);
-        }
-
-        protected virtual void RemoveObjectInternal(ObjectT o) { }
 
         protected override void ProcessZoneInternal(float time, ReadOnlySpan<byte> data, int offset)
         {
