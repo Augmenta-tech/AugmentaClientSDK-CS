@@ -117,10 +117,11 @@ namespace Augmenta
             this.onObjectEntered?.Invoke(objectToAdd);
         }
 
-        internal void RemoveObject(ref BaseObject objectToRemove)
+        internal void RemoveObject(int objectIdx)
         {
-            this.objects.Remove(objectToRemove);
-            this.onObjectExited?.Invoke(objectToRemove);
+            var o = this.objects[objectIdx];
+            this.objects.RemoveAt(objectIdx);
+            this.onObjectExited?.Invoke(o);
         }
     }
 
