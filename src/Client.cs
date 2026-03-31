@@ -119,8 +119,13 @@ namespace Augmenta
                 }
 
                 // Remove objects that were not updated this frame
-                // They should have been notified already
-                workingScene.objects.RemoveAll(obj => !obj.updatedThisFrame);
+                for (int i = workingScene.objects.Count - 1; i >= 0; i--)
+                {
+                    if (!workingScene.objects[i].updatedThisFrame)
+                    {
+                        workingScene.RemoveObject(i);
+                    }
+                }
             }
 
             var packetDataPos = offset + 5;
