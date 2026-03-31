@@ -166,6 +166,8 @@ namespace Augmenta
             BaseObject o = objectAlreadyExists ? o = objects[objectID] : CreateObject();
 
             ProcessObjectInternal(o);
+
+            // TODO: Should pass options as well, to deal with different rotation representations
             o.UpdateData(time, data, offset);
             
             if (!objectAlreadyExists)

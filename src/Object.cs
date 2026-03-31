@@ -85,33 +85,25 @@ namespace Augmenta
 
         internal override void UpdateData(float time, ReadOnlySpan<byte> data, int offset)
         {
-
             var propertiesCount = Utils.ReadInt(data, offset + 4); //first data is ID (4 bytes)
-            var pos = offset + 8;
-            while (pos < data.Length)
+            var propertyByteOffset = offset + 8;
+            for (int i = 0; i < propertiesCount; i++)
             {
-                var propertySize = Utils.ReadInt(data, pos);
-                var propertyID = Utils.ReadInt(data, pos + 4);
-
-                if (propertySize < 0)
-                {
-                    break;
-                }
-
-                var propertyDataPos = pos + 8;
+                var propertySize = Utils.ReadInt(data, propertyByteOffset);
+                var propertyID = Utils.ReadInt(data, propertyByteOffset + 4);
 
                 switch (propertyID)
                 {
                     case 0:
-                        UpdatePointsData(data, propertyDataPos);
+                        UpdatePointsData(data, propertyByteOffset + 8);
                         break;
                     case 1:
                         isCluster = true;
-                        UpdateClusterData(data, propertyDataPos);
+                        UpdateClusterData(data, propertyByteOffset + 8);
                         break;
                 }
 
-                pos += propertySize;
+                propertyByteOffset += propertySize;
             }
 
             base.UpdateData(time, data, offset);
@@ -122,6 +114,7 @@ namespace Augmenta
             pointCount = Utils.ReadInt(data, offset);
             var vectors = Utils.ReadVectors<TVector3>(data, offset + sizeof(int), pointCount * 12);
 
+            // TODO: ???
             if (pointsA.Length < pointCount)
                 pointsA = new TVector3[(int)(pointCount * 1.5)];
 
@@ -139,31 +132,30 @@ namespace Augmenta
 
         override protected void UpdateClusterData(ReadOnlySpan<byte> data, int offset)
         {
-            state = (State)Utils.ReadInt(data, offset);
+            state = (State) Utils.ReadInt(data, offset);
+            offset += 4;
 
-            const int numProperties = 4;
-            var clusterData = new TVector3[numProperties];
-            for (int i = 0; i < 4; i++)
-            {
-                var si = offset + sizeof(int) + i * 12;
+            centroid = ReadVector(data, offset);
+            offset += 12;
 
-                clusterData[i] = ReadVector(data, si);
+            velocity = ReadVector(data, offset);
+            offset += 12;
 
-                //We're deciding to not use custom transformation here, final client will take care of this
-                //if (i == 1) clusterData[i] = p; //don't transform the velocity, it's already in world space
-                //else updateClusterPoint(ref clusterData[i], p);
+            boxCenter = ReadVector(data, offset);
+            offset += 12;
 
-            }
+            boxSize = ReadVector(data, offset);
+            offset += 12;
 
-            centroid = clusterData[0];
-            velocity = clusterData[1];
-            boxCenter = clusterData[2];
-            boxSize = clusterData[3];
+            weight = Utils.ReadFloat(data, offset);
+            offset += 4;
 
-            int weightDataIndex = offset + 4 + numProperties * 12;
-            weight = Utils.ReadFloat(data, weightDataIndex);
+            // TODO: Handle Quaternions if the option was set
+            rotation = ReadVector(data, offset);
+            offset += 12;
 
-            rotation = ReadVector(data, weightDataIndex + 4);
+            //lookAt = ReadVector(data, offset);
+            //offset += 12;
 
             UpdateTransform();
         }
