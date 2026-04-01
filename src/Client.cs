@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Numerics;
 
 namespace Augmenta
 {
@@ -11,15 +10,21 @@ namespace Augmenta
     /// <todo> This "Base" class is useless, it should be merged with the derived templated one </todo>
     public abstract class BaseClient
     {
+        public readonly string appName;
+        public readonly string appVersion;
+        public readonly string pluginVersion;
+
         public BaseContainer worldContainer;
         protected BaseContainer workingScene; //the scene provided in the bundle data on receive
 
         protected Dictionary<string, BaseContainer> addressContainerMap;
         public ProtocolOptions options;
 
-        public BaseClient()
+        public BaseClient(string appName, string appVersion, string pluginVersion)
         {
-            addressContainerMap = new Dictionary<string, BaseContainer>();
+            this.appName = appName;
+            this.appVersion = appVersion;
+            this.pluginVersion = pluginVersion;
         }
 
         //Call once per frame
@@ -273,7 +278,7 @@ namespace Augmenta
         public delegate void OnSetupCompleted(Container<TVector3> world);
         public event OnSetupCompleted onSetupCompleted;
 
-        public Client() : base()
+        public Client(string appName, string appVersion, string pluginVersion) : base(appName, appVersion, pluginVersion)
         {
         }
 
@@ -403,6 +408,10 @@ namespace Augmenta
 
             JSONObject registerJson = JSONObject.Create();
             registerJson.AddField("name", clientName);
+            registerJson.AddField("application-name", appName);
+            registerJson.AddField("application-version", appVersion);
+            registerJson.AddField("plugin-version", pluginVersion);
+
             registerJson.AddField("options", optionsJson);
 
             JSONObject dataJson = JSONObject.Create();
