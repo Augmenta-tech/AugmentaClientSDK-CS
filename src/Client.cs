@@ -17,7 +17,7 @@ namespace Augmenta
         public BaseContainer worldContainer;
         protected BaseContainer workingScene; //the scene provided in the bundle data on receive
 
-        protected Dictionary<string, BaseContainer> addressContainerMap;
+        protected Dictionary<string, BaseContainer> addressContainerMap = new();
         public ProtocolOptions options;
 
         public BaseClient(string appName, string appVersion, string pluginVersion)
