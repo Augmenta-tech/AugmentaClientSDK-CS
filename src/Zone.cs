@@ -2,17 +2,6 @@ using System;
 
 namespace Augmenta
 {
-    public class ObjectsEnteredZoneArgs : EventArgs
-    {
-        public int NumObjects { get; }
-        public ObjectsEnteredZoneArgs(int numObjects) => NumObjects = numObjects;
-    }
-
-    public class ObjectsExitedZoneArgs : EventArgs
-    {
-        public int NumObjects { get; }
-        public ObjectsExitedZoneArgs(int numObjects) => NumObjects = numObjects;
-    }
 
     public class Zone<TVector3> : ShapeContainer<TVector3> where TVector3 : struct
     {
@@ -23,32 +12,33 @@ namespace Augmenta
         public float padX = 0;
         public float padY = 0;
 
-#nullable enable
-        public event EventHandler<ObjectsEnteredZoneArgs>? ObjectsEntered;
-        public event EventHandler<ObjectsExitedZoneArgs>? ObjectsExited;
-#nullable disable
-
         private TVector3[] pointsA = new TVector3[0];
         private int pointCount;
         public ArraySegment<TVector3> points => new ArraySegment<TVector3>(pointsA, 0, pointCount);
 
-        public Zone(BaseClient client, JSONObject o, Container<TVector3> parent) : base(client, o, parent, ContainerType.Zone)
+        public delegate void OnObjectsEnteredEvent(Zone<TVector3> zone, int count);
+        public event OnObjectsEnteredEvent onObjectsEntered;
+
+        public delegate void OnObjectsExitedEvent(Zone<TVector3> zone, int count);
+        public event OnObjectsExitedEvent onObjectsExited;
+
+        public Zone(Client<TVector3> client, JSONObject o, Container<TVector3> parent) : base(client, o, parent, ContainerType.Zone)
         {
             SetupSliderAxis(o["localSliderAxis"]);
         }
 
-        public virtual void ProcessData(float time, ReadOnlySpan<byte> data, int offset)
+        public virtual void ProcessData(ReadOnlySpan<byte> data, int offset)
         {
             byte numEntered = data[offset];
             if (numEntered > 0)
             {
-                ObjectsEntered?.Invoke(this, new ObjectsEnteredZoneArgs(numEntered));
+                onObjectsEntered?.Invoke(this, numEntered);
             }
 
             byte numExited = data[offset + 1];
             if (numExited > 0)
             {
-                ObjectsExited?.Invoke(this, new ObjectsExitedZoneArgs(numExited));
+                onObjectsExited?.Invoke(this, numExited);
             }
 
             presence = Utils.ReadInt(data, offset + 2);
@@ -64,20 +54,16 @@ namespace Augmenta
                 switch (extraType)
                 {
                     case 0: //slider
-                        {
-                            sliderValue = Utils.ReadFloat(data, extraPos + 5);
-                        }
+                        sliderValue = Utils.ReadFloat(data, extraPos + 5);
                         break;
 
                     case 1:
-                        {
-                            padX = Utils.ReadFloat(data, extraPos + 5);
-                            padY = Utils.ReadFloat(data, extraPos + 9);
-                        }
+                        padX = Utils.ReadFloat(data, extraPos + 5);
+                        padY = Utils.ReadFloat(data, extraPos + 9);
                         break;
 
-                    case 2: //cloud, to be handled internally
-                        ProcessCloudInternal(time, data, extraPos + 5);
+                    case 2:
+                        ProcessPointCloud(data, extraPos + 5);
                         break;
 
                 }
@@ -85,14 +71,15 @@ namespace Augmenta
                 extraPos += extraSize;
             }
         }
-        protected override void HandleParamUpdateInternal(string prop, JSONObject data)
+
+        internal override void HandleUpdate(JSONObject o)
         {
-            base.HandleParamUpdateInternal(prop, data);
-            if (prop == "localSliderAxis") SetupSliderAxis(data);
+            if (o.HasField("localSliderAxis")) SetupSliderAxis(o["localSliderAxis"]);
+            base.HandleUpdate(o);
         }
-        protected virtual void ProcessCloudInternal(float time, ReadOnlySpan<byte> data, int offset)
+
+        private void ProcessPointCloud(ReadOnlySpan<byte> data, int offset)
         {
-            //to be implemented by derived classes
             pointCount = Utils.ReadInt(data, offset);
 
             var vectors = Utils.ReadVectors<TVector3>(data, offset + sizeof(int), pointCount * 12);

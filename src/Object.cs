@@ -1,36 +1,37 @@
 using System;
-using System.Diagnostics;
-using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace Augmenta
 {
-    public abstract class BaseObject
+    public class GenericObject<TVector3> where TVector3 : struct
     {
         public int objectID;
         public bool isCluster;
         internal bool updatedThisFrame = true;
 
-        public enum PositionUpdateMode { None, Centroid, BoxCenter }
-        public PositionUpdateMode posUpdateMode = PositionUpdateMode.Centroid;
-        public enum CoordMode { Absolute, Relative }
-        public CoordMode pointMode = CoordMode.Relative;
         public enum State { Enter = 0, Update = 1, Leave = 2, Ghost = 3 };
         public State state;
 
-        public delegate void OnEnterEvent(BaseObject obj);
+        public delegate void OnEnterEvent(GenericObject<TVector3> obj);
         public event OnEnterEvent onEnter;
 
-        public delegate void OnUpdateEvent(BaseObject obj);
+        public delegate void OnUpdateEvent(GenericObject<TVector3> obj);
         public event OnUpdateEvent onUpdate;
 
-        public delegate void OnLeaveEvent(BaseObject obj);
+        public delegate void OnLeaveEvent(GenericObject<TVector3> obj);
         public event OnLeaveEvent onLeave;
 
-        virtual internal void UpdateData(float time, ReadOnlySpan<byte> data, int offset)
-        {
-            updatedThisFrame = true;
-        }
+        private TVector3[] pointsA = new TVector3[0];
+        private int pointCount;
+        public ArraySegment<TVector3> points => new ArraySegment<TVector3>(pointsA, 0, pointCount);
+
+        //cluster
+        public TVector3 centroid;
+        public TVector3 velocity;
+        public TVector3 boxCenter;
+        public TVector3 boxSize;
+        public TVector3 rotation;
+        public float weight;
 
         internal void NotifyEnter()
         {
@@ -46,23 +47,8 @@ namespace Augmenta
         {
             this.onUpdate?.Invoke(this);
         }
-    }
 
-    public abstract class GenericObject<TVector3> : BaseObject where TVector3 : struct
-    {
-        private TVector3[] pointsA = new TVector3[0];
-        private int pointCount;
-        public ArraySegment<TVector3> points => new ArraySegment<TVector3>(pointsA, 0, pointCount);
-
-        //cluster
-        public TVector3 centroid;
-        public TVector3 velocity;
-        public TVector3 boxCenter;
-        public TVector3 boxSize;
-        public TVector3 rotation;
-        public float weight;
-
-        internal override void UpdateData(float time, ReadOnlySpan<byte> data, int offset)
+        internal void UpdateData(ReadOnlySpan<byte> data, int offset)
         {
             var propertiesCount = Utils.ReadInt(data, offset + 4); //first data is ID (4 bytes)
             var propertyByteOffset = offset + 8;
@@ -85,7 +71,7 @@ namespace Augmenta
                 propertyByteOffset += propertySize;
             }
 
-            base.UpdateData(time, data, offset);
+            updatedThisFrame = true;
         }
 
         private void UpdatePointsData(ReadOnlySpan<byte> data, int offset)
@@ -128,7 +114,8 @@ namespace Augmenta
             //offset += 12;
         }
 
-        virtual protected TVector3 ReadVector(ReadOnlySpan<byte> data, int offset)
+        // TODO: Move to Utils
+        private TVector3 ReadVector(ReadOnlySpan<byte> data, int offset)
         {
             return MemoryMarshal.Cast<byte, TVector3>(data.Slice(offset))[0];
         }

@@ -10,25 +10,26 @@ namespace Augmenta
     {
         public Shape<TVector3> shape;
 
-        public ShapeContainer(BaseClient client, JSONObject o, Container<TVector3> parent, ContainerType type) : base(client, o, parent, type)
+        public ShapeContainer(Client<TVector3> client, JSONObject o, Container<TVector3> parent, ContainerType type) : base(client, o, parent, type)
         {
             SetupShape(o["shape"]);
         }
 
-        protected override void HandleParamUpdateInternal(string prop, JSONObject data)
+        internal override void HandleUpdate(JSONObject o)
         {
-            base.HandleParamUpdateInternal(prop, data);
-            if (prop == "shape") SetupShape(data);
-            else if (prop == "shapeParam")
+            if (o.HasField("shape")) SetupShape(o["shape"]);
+
+            if (o.HasField("shapeParam"))
             {
-                if (shape != null)
+                var shapeParamsJson = o["shapeParam"];
+                foreach (var p in shapeParamsJson.keys)
                 {
-                    foreach (var p in data.keys)
-                    {
-                        shape.HandleParamUpdate(p, data[p]);
-                    }
+                    shape.HandleParamUpdate(p, shapeParamsJson[p]);
                 }
             }
+
+
+            base.HandleUpdate(o);
         }
 
         void SetupShape(JSONObject o)

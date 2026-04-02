@@ -3,34 +3,26 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Augmenta
-{
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <todo> This "Base" class is useless, it should be merged with the derived templated one </todo>
-    public abstract class BaseClient
+{   
+    public class Client<TVector3> where TVector3 : struct
     {
         public readonly string appName;
         public readonly string appVersion;
         public readonly string pluginVersion;
-
-        public BaseContainer worldContainer;
-        protected BaseContainer workingScene; //the scene provided in the bundle data on receive
-
-        protected Dictionary<string, BaseContainer> addressContainerMap = new();
         public ProtocolOptions options;
 
-        public BaseClient(string appName, string appVersion, string pluginVersion)
+        private Container<TVector3> worldContainer;
+        private Scene<TVector3> workingScene; //the scene provided in the bundle data on receive
+        private Dictionary<string, Container<TVector3>> addressContainerMap = new();
+
+        public delegate void OnSetupCompleted(Container<TVector3> world);
+        public event OnSetupCompleted onSetupCompleted;
+
+        public Client(string appName, string appVersion, string pluginVersion)
         {
             this.appName = appName;
             this.appVersion = appVersion;
             this.pluginVersion = pluginVersion;
-        }
-
-        //Call once per frame
-        [Obsolete("You no longer need to call update on the client each frame !", false)]
-        virtual public void Update(float time)
-        {
         }
 
         /// <summary>
@@ -65,28 +57,11 @@ namespace Augmenta
             }
         }
 
-        internal virtual void SetupWorld(JSONObject data)
-        {
-            if (worldContainer != null)
-            {
-                worldContainer.Clear();
-            }
-
-            addressContainerMap.Clear();
-
-            if (data == null)
-            {
-                return;
-            }
-
-            worldContainer = CreateContainer(data[0]);
-        }
-
         /// <summary>
         /// Process a data blob received through the data channel of a websocket connection,
         /// updating the data structure as needed.
         /// </summary>
-        public void ProcessData(float time, ReadOnlySpan<byte> dataBuffer)
+        public void ProcessData(ReadOnlySpan<byte> dataBuffer)
         {
             ReadOnlySpan<byte> packet;
 
@@ -101,10 +76,10 @@ namespace Augmenta
                 packet = dataBuffer;
             }
 
-            ProcessPacket(time, packet, 0);
+            ProcessPacket(packet, 0);
         }
 
-        private void ProcessPacket(float time, ReadOnlySpan<byte> packet, int offset)
+        private void ProcessPacket(ReadOnlySpan<byte> packet, int offset)
         {
             var packetSize = Utils.ReadInt(packet, offset);
             var type = packet[offset + 4];
@@ -119,7 +94,7 @@ namespace Augmenta
                 while (pos < packet.Length - 4)
                 {
                     var pSize = Utils.ReadInt(packet, pos);
-                    ProcessPacket(time, packet, pos);
+                    ProcessPacket(packet, pos);
                     pos += pSize;
                 }
 
@@ -139,19 +114,19 @@ namespace Augmenta
             {
                 case 0: // Object
                     {
-                        ProcessObject(time, packet, packetDataPos);
+                        ProcessObject(packet, packetDataPos);
                     }
                     break;
 
                 case 1: // Zone
                     {
-                        ProcessZone(time, packet, packetDataPos);
+                        ProcessZone(packet, packetDataPos);
                     }
                     break;
 
                 case 2: // Scene
                     {
-                        ProcessScene(time, packet, packetDataPos);
+                        ProcessScene(packet, packetDataPos);
 
                         // We just started updating a scene, reset object update status
                         foreach (var obj in workingScene.objects)
@@ -163,23 +138,21 @@ namespace Augmenta
             }
         }
 
-        private void ProcessObject(float time, ReadOnlySpan<byte> data, int offset)
+        private void ProcessObject(ReadOnlySpan<byte> data, int offset)
         {
             var objectID = Utils.ReadInt(data, offset);
 
-            BaseObject o = workingScene.GetObject(objectID);
+            var o = workingScene.GetObject(objectID);
             bool objectAlreadyExists = o != null;
             if (!objectAlreadyExists)
             {
-                o = CreateObject();
+                o = new GenericObject<TVector3>();
                 o.objectID = objectID;
             }
 
-            ProcessObjectInternal(o);
-
             // TODO: Should pass options as well, to deal with different rotation representations
-            o.UpdateData(time, data, offset);
-            
+            o.UpdateData(data, offset);
+
             if (!objectAlreadyExists)
             {
                 workingScene.AddObject(ref o);
@@ -189,11 +162,11 @@ namespace Augmenta
             {
                 switch (o.state)
                 {
-                    case BaseObject.State.Enter:
+                    case GenericObject<TVector3>.State.Enter:
                         o.NotifyEnter();
                         break;
 
-                    case BaseObject.State.Update:
+                    case GenericObject<TVector3>.State.Update:
                         if (!objectAlreadyExists)
                         {
                             o.NotifyEnter();
@@ -204,7 +177,7 @@ namespace Augmenta
                         }
                         break;
 
-                    case BaseObject.State.Leave:
+                    case GenericObject<TVector3>.State.Leave:
                         o.NotifyLeave(); // TODO: Rename leave for consistency
                         break;
                 }
@@ -215,54 +188,41 @@ namespace Augmenta
             }
         }
 
-        // TODO: Not used, deprecate ?
-        virtual protected void ProcessObjectInternal(BaseObject o) { }
-
-        private void ProcessZone(float time, ReadOnlySpan<byte> data, int offset)
+        private void ProcessZone(ReadOnlySpan<byte> data, int offset)
         {
-            ProcessZoneInternal(time, data, offset);
+            var zoneIDSize = Utils.ReadInt(data, offset);
+            var zoneID = Utils.ReadString(data, offset + 4, zoneIDSize);
+
+            Zone<TVector3> zone = GetContainerForAddress(zoneID) as Zone<TVector3>;
+            if (zone == null) return;
+            zone.ProcessData(data, offset + 4 + zoneIDSize);
         }
 
-        virtual protected void ProcessZoneInternal(float time, ReadOnlySpan<byte> data, int offset) { }
-
-        private void ProcessScene(float time, ReadOnlySpan<byte> data, int offset)
+        private void ProcessScene(ReadOnlySpan<byte> data, int offset)
         {
             var sceneIDSize = Utils.ReadInt(data, offset);
             var sceneID = Utils.ReadString(data, offset + 4, sceneIDSize);
-
-            if (sceneID == "")
-            {
-                workingScene = worldContainer;
-            }
-            else
-            {
-                if (worldContainer == null) return;
-                workingScene = GetContainerForAddress(sceneID);
-            }
+           
+            workingScene = GetContainerForAddress(sceneID) as Scene<TVector3>;
         }
 
-        internal abstract BaseContainer CreateContainer(JSONObject data);
-
-        public virtual void RegisterContainer(BaseContainer c)
+        internal void RegisterContainer(Container<TVector3> c)
         {
-            if (addressContainerMap == null) addressContainerMap = new Dictionary<string, BaseContainer>();
             addressContainerMap.Add(c.address, c);
         }
 
-        public virtual void UnregisterContainer(BaseContainer c)
+        internal void UnregisterContainer(Container<TVector3> c)
         {
             addressContainerMap.Remove(c.address);
         }
 
-        public BaseContainer GetContainerForAddress(string address)
+        public Container<TVector3> GetContainerForAddress(string address)
         {
             if (!addressContainerMap.ContainsKey(address)) return null;
             return addressContainerMap[address];
         }
 
-        protected abstract BaseObject CreateObject();
-
-        virtual public void Clear()
+        public void Clear()
         {
             if (worldContainer != null)
             {
@@ -270,42 +230,6 @@ namespace Augmenta
                 worldContainer = null;
             }
             addressContainerMap.Clear();
-        }
-    }
-    
-    public class Client<ObjectT, TVector3> : BaseClient where ObjectT : BaseObject, new() where TVector3 : struct
-    {
-        public delegate void OnSetupCompleted(Container<TVector3> world);
-        public event OnSetupCompleted onSetupCompleted;
-
-        public Client(string appName, string appVersion, string pluginVersion) : base(appName, appVersion, pluginVersion)
-        {
-        }
-
-        protected override BaseObject CreateObject()
-        {
-            return new ObjectT();
-        }
-
-        internal override BaseContainer CreateContainer(JSONObject data)
-        {
-            var container = new Container<TVector3>(this, data, null);
-            OnContainerCreated(ref container);
-            return container;
-        }
-
-        protected virtual void OnContainerCreated(ref Container<TVector3> newContainer)
-        {
-        }
-
-        protected override void ProcessZoneInternal(float time, ReadOnlySpan<byte> data, int offset)
-        {
-            var zoneIDSize = Utils.ReadInt(data, offset);
-            var zoneID = Utils.ReadString(data, offset + 4, zoneIDSize);
-
-            Zone<TVector3> zone = GetContainerForAddress(zoneID) as Zone<TVector3>;
-            if (zone == null) return;
-            zone.ProcessData(time, data, offset + 4 + zoneIDSize);
         }
 
         /// <summary>
@@ -427,9 +351,16 @@ namespace Augmenta
             return pollJson.ToString();
         }
 
-        internal override void SetupWorld(JSONObject data)
+        private void SetupWorld(JSONObject data)
         {
-            base.SetupWorld(data);
+            if (worldContainer != null)
+            {
+                worldContainer.Clear();
+            }
+            addressContainerMap.Clear();
+
+            worldContainer = new Container<TVector3>(this, data[0], null);
+
             onSetupCompleted?.Invoke(worldContainer as Container<TVector3>);
         }
 
