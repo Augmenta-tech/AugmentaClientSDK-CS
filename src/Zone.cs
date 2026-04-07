@@ -22,6 +22,18 @@ namespace Augmenta
         public delegate void OnObjectsExitedEvent(Zone<TVector3> zone, int count);
         public event OnObjectsExitedEvent onObjectsExited;
 
+        public delegate void OnSliderUpdatedEvent(Zone<TVector3> zone, float sliderValue);
+        public event OnSliderUpdatedEvent onSliderUpdated;
+
+        public delegate void OnXYPadUpdatedEvent(Zone<TVector3> zone, float xValue, float yValue);
+        public event OnXYPadUpdatedEvent onXYPadUpdated;
+
+        public delegate void OnPresenceUpdatedEvent(Zone<TVector3> zone, int presence);
+        public event OnPresenceUpdatedEvent onPresenceUpdated;
+
+        public delegate void OnPointCloudUpdated(Zone<TVector3> zone);
+        public event OnPointCloudUpdated onPointCloudUpdated;
+
         public Zone(Client<TVector3> client, JSONObject o, Container<TVector3> parent) : base(client, o, parent, ContainerType.Zone)
         {
             SetupSliderAxis(o["localSliderAxis"]);
@@ -42,6 +54,8 @@ namespace Augmenta
             }
 
             presence = Utils.ReadInt(data, offset + 2);
+            onPresenceUpdated?.Invoke(this, presence);
+
             density = Utils.ReadFloat(data, offset + 6);
 
             int extraDataCount = Utils.ReadInt(data, offset + 10);
@@ -55,15 +69,18 @@ namespace Augmenta
                 {
                     case 0: //slider
                         sliderValue = Utils.ReadFloat(data, extraPos + 5);
+                        onSliderUpdated?.Invoke(this, sliderValue);
                         break;
 
                     case 1:
                         padX = Utils.ReadFloat(data, extraPos + 5);
                         padY = Utils.ReadFloat(data, extraPos + 9);
+                        onXYPadUpdated?.Invoke(this, padX, padY);
                         break;
 
                     case 2:
                         ProcessPointCloud(data, extraPos + 5);
+                        onPointCloudUpdated?.Invoke(this);
                         break;
 
                 }
