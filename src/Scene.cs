@@ -6,7 +6,7 @@ namespace Augmenta
     {
         public TVector3 size;
 
-        public List<GenericObject<TVector3>> objects = new(); // Objects part of this container. 
+        public List<GenericObject<TVector3>> objects = new List<GenericObject<TVector3>>(); // Objects part of this container. 
 
         public delegate void OnObjectEnteredEvent(GenericObject<TVector3> obj);
         public event OnObjectEnteredEvent onObjectEntered;

@@ -13,7 +13,7 @@ namespace Augmenta
 
         private Container<TVector3> worldContainer;
         private Scene<TVector3> workingScene; //the scene provided in the bundle data on receive
-        private Dictionary<string, Container<TVector3>> addressContainerMap = new();
+        private Dictionary<string, Container<TVector3>> addressContainerMap = new Dictionary<string, Container<TVector3>>();
 
         public delegate void OnSetupCompleted(Container<TVector3> world);
         public event OnSetupCompleted onSetupCompleted;
