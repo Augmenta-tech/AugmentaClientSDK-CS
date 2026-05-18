@@ -34,13 +34,16 @@ namespace Augmenta
         {
             this.objects.Add(objectToAdd);
             this.onObjectEntered?.Invoke(objectToAdd);
+            objectToAdd.NotifyEnter();
         }
 
         internal void RemoveObject(int objectIdx)
         {
-            var o = this.objects[objectIdx];
+            var objectToRemove = this.objects[objectIdx];
+
+            objectToRemove.NotifyLeave();
+            this.onObjectExited?.Invoke(objectToRemove);
             this.objects.RemoveAt(objectIdx);
-            this.onObjectExited?.Invoke(o);
         }
     }
 }

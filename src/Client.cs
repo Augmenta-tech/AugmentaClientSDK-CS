@@ -101,7 +101,8 @@ namespace Augmenta
                 // Remove objects that were not updated this frame
                 for (int i = workingScene.objects.Count - 1; i >= 0; i--)
                 {
-                    if (!workingScene.objects[i].updatedThisFrame)
+                    var obj = workingScene.objects[i];
+                    if (!obj.updatedThisFrame)
                     {
                         workingScene.RemoveObject(i);
                     }
@@ -157,35 +158,8 @@ namespace Augmenta
             {
                 workingScene.AddObject(ref o);
             }
-
-            if (o.isCluster)
-            {
-                switch (o.state)
-                {
-                    case GenericObject<TVector3>.State.Enter:
-                        o.NotifyEnter();
-                        break;
-
-                    case GenericObject<TVector3>.State.Update:
-                        if (!objectAlreadyExists)
-                        {
-                            o.NotifyEnter();
-                        }
-                        else
-                        {
-                            o.NotifyUpdate();
-                        }
-                        break;
-
-                    case GenericObject<TVector3>.State.Leave:
-                        o.NotifyLeave(); // TODO: Rename leave for consistency
-                        break;
-                }
-            }
-            else // Point Cloud
-            {
-                o.NotifyUpdate();
-            }
+           
+            o.NotifyUpdate();
         }
 
         private void ProcessZone(ReadOnlySpan<byte> data, int offset)
