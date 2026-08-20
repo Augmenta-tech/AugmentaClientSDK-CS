@@ -3,15 +3,23 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Augmenta
-{   
+{
     public class Client<TVector3> where TVector3 : struct
     {
+        private enum Status
+        {
+            Uninitialized,
+            WaitingForHandshake,
+            Alive
+        }
+
         public readonly string appName;
         public readonly string appVersion;
         public readonly string pluginVersion;
-        public ProtocolOptions options;
+        private ProtocolOptions options;
+        Status state = Status.Uninitialized;
 
-        private Container<TVector3> worldContainer;
+        private Container<TVector3> worldContainer = null;
         private Scene<TVector3> workingScene; //the scene provided in the bundle data on receive
         private Dictionary<string, Container<TVector3>> addressContainerMap = new Dictionary<string, Container<TVector3>>();
 
@@ -30,21 +38,40 @@ namespace Augmenta
         /// </summary>
         public void ProcessMessage(string message)
         {
-            JSONObject o = new JSONObject(message);
-            if (o.HasField("status"))
+            JSONObject json = new JSONObject(message);
+           
+            if (json.HasField("status"))
             {
-                if (o["status"].str == "ok")
+                if (json["status"].str == "ok")
                 {
-                    if (o.HasField("setup"))
+                    // The SDK only handles version 2 for now, so if for any reason the server answers with something else, keep waiting
+                    json.GetField(out int version, "version", -1);
+                    if (version != 2)
                     {
-                        var worldJson = o["setup"];
-                        SetupWorld(worldJson);
+                        return;
                     }
+
+                    var worldJson = json["setup"];
+                    SetupWorld(worldJson);
+
+                    // TODO: Force back options based on the recieved setup message
+
+                    state = Status.Alive;
                 }
             }
-            else if (o.HasField("update"))
+            else if (json.HasField("update"))
             {
-                var updatedObject = o["update"][0];
+                // TMP: Set up the world with received data if it was not initialized
+                // This is a dirty workaround for the case where the client fails to send the register message before the server times out.
+                // It should be removed later
+                if (worldContainer == null)
+                {
+                    SetupWorld(json["update"]);
+                    state = Status.Alive;
+                    return;
+                }
+
+                var updatedObject = json["update"][0];
                 var address = updatedObject["address"].str;
                 var container = GetContainerForAddress(address);
                 if (container == null)
@@ -63,6 +90,13 @@ namespace Augmenta
         /// </summary>
         public void ProcessData(ReadOnlySpan<byte> dataBuffer)
         {
+            if (state != Status.Alive)
+            {
+                // Skip processing while waiting for handshake to avoid parsing errors
+                // (for example, we do not know whether the payload is compressed yet)
+                return;
+            }
+
             ReadOnlySpan<byte> packet;
 
             byte[] decompressedBuffer;
@@ -158,7 +192,7 @@ namespace Augmenta
             {
                 workingScene.AddObject(ref o);
             }
-           
+
             o.NotifyUpdate();
         }
 
@@ -176,7 +210,7 @@ namespace Augmenta
         {
             var sceneIDSize = Utils.ReadInt(data, offset);
             var sceneID = Utils.ReadString(data, offset + 4, sceneIDSize);
-           
+
             workingScene = GetContainerForAddress(sceneID) as Scene<TVector3>;
         }
 
@@ -207,11 +241,14 @@ namespace Augmenta
         }
 
         /// <summary>
-        /// Generate a Register message according to current options and settings and returns it as a JSON string,
-        ///  ready to be sent to the server. 
+        /// Initialize the client with a set of options. Returns a Register message as a JSON string that should be sent to the server.
         /// </summary>
-        public string GetRegisterMessage(string clientName)
+        public string Initialize(string clientName, ref ProtocolOptions options)
         {
+            Debug.Assert(state == Status.Uninitialized);
+
+            this.options = options;
+
             JSONObject optionsJson = JSONObject.Create();
             if (options.version == ProtocolVersion.Latest)
             {
@@ -315,7 +352,20 @@ namespace Augmenta
             JSONObject dataJson = JSONObject.Create();
             dataJson.AddField("register", registerJson);
 
+            state = Status.WaitingForHandshake;
+
             return dataJson.ToString();
+        }
+
+        public void Shutdown()
+        {
+            Debug.Assert(state == Status.Alive || state == Status.WaitingForHandshake);
+            state = Status.Uninitialized;
+        }
+
+        public ProtocolOptions GetOptions()
+        {
+            return options;
         }
 
         public string GetPollMessage()
