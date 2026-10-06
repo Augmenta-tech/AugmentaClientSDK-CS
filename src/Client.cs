@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 namespace Augmenta
 {
-    public class Client<TVector3> where TVector3 : struct
+    public class Client<TVector3> : IDisposable where TVector3 : struct
     {
         private enum Status
         {
@@ -18,6 +18,7 @@ namespace Augmenta
         public readonly string pluginVersion;
         private ProtocolOptions options;
         Status state = Status.Uninitialized;
+        private ReusableDecompressor decompressor;
 
         private Container<TVector3> worldContainer = null;
         private Scene<TVector3> workingScene; //the scene provided in the bundle data on receive
@@ -99,11 +100,10 @@ namespace Augmenta
 
             ReadOnlySpan<byte> packet;
 
-            byte[] decompressedBuffer;
             if (options.useCompression)
             {
-                decompressedBuffer = Utils.DecompressData(dataBuffer);
-                packet = decompressedBuffer;
+                decompressor ??= new ReusableDecompressor();
+                packet = decompressor.Unwrap(dataBuffer);
             }
             else
             {
@@ -361,6 +361,23 @@ namespace Augmenta
         {
             Debug.Assert(state == Status.Alive || state == Status.WaitingForHandshake);
             state = Status.Uninitialized;
+            DisposeCompressionResources();
+        }
+
+        /// <summary>
+        /// Release native compression resources owned by this client.
+        /// Shutdown() also releases them, so Dispose() is mainly useful when a
+        /// client is discarded without an explicit connection shutdown.
+        /// </summary>
+        public void Dispose()
+        {
+            DisposeCompressionResources();
+        }
+
+        private void DisposeCompressionResources()
+        {
+            decompressor?.Dispose();
+            decompressor = null;
         }
 
         public ProtocolOptions GetOptions()
