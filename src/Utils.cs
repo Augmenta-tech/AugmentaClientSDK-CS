@@ -38,9 +38,82 @@ namespace Augmenta
             return Color.FromArgb((int)(v[3].f * 255), (int)(v[0].f * 255), (int)(v[1].f * 255), (int)(v[2].f * 255));
         }
 
-        internal static byte[] DecompressData(ReadOnlySpan<byte> data)
+    }
+
+    /// <summary>
+    /// Reuses both the native Zstd decompression context and the managed
+    /// destination buffer across tracking frames.
+    /// </summary>
+    internal sealed class ReusableDecompressor : IDisposable
+    {
+        private const int MinimumGrowth = 4096;
+
+        private readonly Decompressor decompressor = new Decompressor();
+        private byte[] buffer = Array.Empty<byte>();
+        private bool disposed;
+
+        internal ReadOnlySpan<byte> Unwrap(ReadOnlySpan<byte> data)
         {
-            return new Decompressor().Unwrap(data);
+            if (disposed)
+            {
+                throw new ObjectDisposedException(nameof(ReusableDecompressor));
+            }
+
+            ulong expectedSize = Decompressor.GetDecompressedSize(data);
+            if (expectedSize > int.MaxValue)
+            {
+                throw new InvalidOperationException(
+                    $"Decompressed frame size {expectedSize} exceeds the maximum supported buffer size.");
+            }
+
+            int requiredLength = (int)expectedSize;
+            EnsureCapacity(requiredLength);
+
+            int written = decompressor.Unwrap(
+                data,
+                buffer.AsSpan(0, requiredLength),
+                bufferSizePrecheck: false);
+
+            return buffer.AsSpan(0, written);
+        }
+
+        private void EnsureCapacity(int requiredLength)
+        {
+            if (buffer.Length >= requiredLength)
+            {
+                return;
+            }
+
+            int nextLength = buffer.Length;
+            if (nextLength == 0)
+            {
+                nextLength = Math.Max(requiredLength, MinimumGrowth);
+            }
+
+            while (nextLength < requiredLength)
+            {
+                int growth = Math.Max(nextLength / 2, MinimumGrowth);
+                if (nextLength > int.MaxValue - growth)
+                {
+                    nextLength = requiredLength;
+                    break;
+                }
+
+                nextLength += growth;
+            }
+
+            buffer = new byte[nextLength];
+        }
+
+        public void Dispose()
+        {
+            if (disposed)
+            {
+                return;
+            }
+
+            decompressor.Dispose();
+            disposed = true;
         }
     }
 }
