@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using ZstdNet;
 
 namespace Augmenta
 {
-    public class Client<TVector3> : IDisposable where TVector3 : struct
+    public class Client<TVector3> where TVector3 : struct
     {
         private enum Status
         {
@@ -18,7 +19,10 @@ namespace Augmenta
         public readonly string pluginVersion;
         private ProtocolOptions options;
         Status state = Status.Uninitialized;
-        private ReusableDecompressor decompressor;
+
+        // Decompression
+        private byte[] buffer = Array.Empty<byte>();
+        private Decompressor decompressor;
 
         private Container<TVector3> worldContainer = null;
         private Scene<TVector3> workingScene; //the scene provided in the bundle data on receive
@@ -102,8 +106,13 @@ namespace Augmenta
 
             if (options.useCompression)
             {
-                decompressor ??= new ReusableDecompressor();
-                packet = decompressor.Unwrap(dataBuffer);
+                var expectedSize = Decompressor.GetDecompressedSize(dataBuffer);
+                Debug.Assert(expectedSize <= int.MaxValue);
+
+                Array.Resize(ref buffer, (int) expectedSize);
+                decompressor.Unwrap(dataBuffer, buffer.AsSpan(0, (int)expectedSize));
+
+                packet = buffer.AsSpan(0, (int)expectedSize);
             }
             else
             {
@@ -249,6 +258,12 @@ namespace Augmenta
 
             this.options = options;
 
+            Array.Resize(ref buffer, 0);
+            if (this.options.useCompression)
+            {
+                decompressor = new Decompressor();
+            }
+
             JSONObject optionsJson = JSONObject.Create();
             if (options.version == ProtocolVersion.Latest)
             {
@@ -360,22 +375,9 @@ namespace Augmenta
         public void Shutdown()
         {
             Debug.Assert(state == Status.Alive || state == Status.WaitingForHandshake);
+            
             state = Status.Uninitialized;
-            DisposeCompressionResources();
-        }
 
-        /// <summary>
-        /// Release native compression resources owned by this client.
-        /// Shutdown() also releases them, so Dispose() is mainly useful when a
-        /// client is discarded without an explicit connection shutdown.
-        /// </summary>
-        public void Dispose()
-        {
-            DisposeCompressionResources();
-        }
-
-        private void DisposeCompressionResources()
-        {
             decompressor?.Dispose();
             decompressor = null;
         }
