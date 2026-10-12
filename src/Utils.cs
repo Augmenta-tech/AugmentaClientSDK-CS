@@ -2,7 +2,6 @@
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
-using ZstdNet;
 
 namespace Augmenta
 {
@@ -38,9 +37,5 @@ namespace Augmenta
             return Color.FromArgb((int)(v[3].f * 255), (int)(v[0].f * 255), (int)(v[1].f * 255), (int)(v[2].f * 255));
         }
 
-        internal static byte[] DecompressData(ReadOnlySpan<byte> data)
-        {
-            return new Decompressor().Unwrap(data);
-        }
     }
 }

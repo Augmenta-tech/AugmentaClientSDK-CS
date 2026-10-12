@@ -15,6 +15,7 @@ You can alternatively add this repository as a submodule into your project direc
 - Instanciate your Client class.
 - Use its method to parse incoming websocket messages.
 - Use the received data to update whatever you need for your use-case.
+- Call `Shutdown()` when closing a connection. It releases the native Zstd decompression context; if a client is discarded without an explicit shutdown, call `Dispose()`.
 
 For a full example usage, see the [Augmenta Websocket Client Unity Package](https://github.com/Augmenta-tech/AugmentaUnityWebsocket/tree/split-sdk) (the most up to date version is on the `split-sdk` branch while Augmenta 1.5 is in beta).
 
